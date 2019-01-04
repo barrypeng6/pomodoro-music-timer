@@ -1,0 +1,26 @@
+# default
+*.swp
+*.log
+.DS_Store
+
+# node
+node_modules
+
+# babel
+lib
+
+# eslint
+.eslintcache
+
+# jest
+coverage
+.cache
+
+# lerna-changelog
+.changelog
+
+# next
+.next
+
+# bundle-analyzer
+analyzer
