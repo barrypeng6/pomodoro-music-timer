@@ -3,7 +3,11 @@ import React from "react";
 export default class extends React.Component {
   constructor(props) {
     super(props);
-    this.state = {};
+    this.state = {
+      isPlaying: false,
+      curentSec: 0,
+      totalSec: 0
+    };
   }
 
   componentDidMount() {
@@ -27,33 +31,73 @@ export default class extends React.Component {
 
   onPlayerReady = e => {
     console.log("ready");
+    const duration = this.player.getDuration();
+    this.setState({ totalSec: duration, curentSec: duration });
   };
 
   onPlayerStateChange = e => {
     if (event.data === 0) {
       console.log("done");
+      clearInterval(this.timer);
     }
   };
 
+  covertSecToMinSec = curentSec => {
+    const min = Math.floor(curentSec / 60);
+    const sec = curentSec % 60;
+    return `${min < 10 ? `0${min}` : min}:${sec < 10 ? `0${sec}` : sec}`;
+  };
+
+  handleStart = () => {
+    if (this.player) {
+      this.player.playVideo();
+      this.timer = setInterval(this.handleCountDown, 1000);
+      this.setState({ isPlaying: true });
+    }
+  };
+
+  handleCountDown = () => {
+    const { curentSec } = this.state;
+    if (curentSec > 0) {
+      this.setState({ curentSec: curentSec - 1 });
+    } else {
+      clearInterval(this.timer);
+    }
+  };
+
+  componentWillUnmount() {
+    clearInterval(this.timer);
+  }
+
   render() {
+    const { totalSec, curentSec, isPlaying } = this.state;
+    const percent = 180 - Math.floor(170 * ((totalSec - curentSec) / totalSec));
     return (
       <div className="container">
         <main>
-          <h1 id="title">Pomodoro Music Timer</h1>
-          <div style={{ position: 'relative' }}>
-            <div id="tomato-fill"></div>
-            <img id="tomato" src="/static/tomato.svg" width="242" height="210"/>
+          <header>
+            <h1 id="title">Pomodoro Music Timer</h1>
+          </header>
+          <div id="timer">{this.covertSecToMinSec(curentSec)}</div>
+          {!isPlaying && <button onClick={this.handleStart}>Start</button>}
+          <div style={{ position: "relative", width: 242, height: 210 }}>
+            <div
+              id="tomato-fill"
+              style={{
+                backgroundPosition: `0px ${!isPlaying ? 180 : percent}px`
+              }}
+            />
+            <img
+              id="tomato"
+              src="/static/tomato.svg"
+              width="242"
+              height="210"
+            />
           </div>
-          
         </main>
         <div id="menu">
-          <img
-            className="icon"
-            onClick={() => {}}
-            width="60"
-            height="60"
-            src="/static/settings.png"
-          />
+          <i className="fas fa-cog icon" />
+          <i className="fas fa-music icon" />
         </div>
         <div id="player" />
         <style jsx>{`
@@ -67,45 +111,61 @@ export default class extends React.Component {
             flex-direction: row;
             background-color: #f95f62;
           }
+          header {
+            position: absolute;
+            top: 0;
+          }
           main {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
             flex-grow: 1;
           }
           #tomato {
             position: absolute;
+            top: 0;
           }
           #tomato-fill {
-            position: absolute;
+            position: relative;
             top: 10px;
             left: 12px;
             width: 216px;
             height: 190px;
             border-radius: 50%;
-            background: url(https://png.pngtree.com/thumb_back/fw800/back_pic/04/09/27/5458156b6e9481f.jpg);
-            background-position: 0px 160px;
+            background: url(https://www.colorhexa.com/b5e98b.png);
             background-repeat: repeat-x;
-            animation: filling 5s linear infinite;
             background-size: cover;
           }
-          @keyframes filling {
-            100% {background-position: 1800px 10px;}
+          #timer {
+            color: #a5e98b;
+            font-size: 56px;
+            text-align: center;
           }
           #title {
             color: #fff;
             text-align: center;
           }
           #menu {
+            position: absolute;
+            right: 0;
+            bottom: 0;
+            top: 0;
             background-color: #eeeeee38;
             width: 100px;
             display: flex;
             flex-direction: column;
             justify-content: flex-start;
             align-items: center;
-            padding: 20px 0;
+            padding: 40px 0;
           }
           #menu > .icon {
             transition: all 0.2s ease-out;
             transform: scale(1, 1);
             cursor: pointer;
+            font-size: 36px;
+            color: #fff;
+            margin-bottom: 40px;
           }
           #menu > .icon:hover {
             transform: scale(1.2, 1.2);
