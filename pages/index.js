@@ -2,24 +2,23 @@ import React from "react";
 import { Auth } from "@kkbox/kkbox-js-sdk";
 import getConfig from "next/config";
 
+import { Main, Menu, ListPanel } from "../components";
+import { INITIAL, WORKING, BREAK } from '../constants';
+
 const {
   serverRuntimeConfig: { appId, appSecret }
 } = getConfig();
 
-const AUTO_START_AFTER_BREAK = 'AUTO_START_AFTER_BREAK';
-const MANUAL_START_AFTER_BREAK = 'MANUAL_START_AFTER_BREAK';
+const AUTO_START_AFTER_BREAK = "AUTO_START_AFTER_BREAK";
+const MANUAL_START_AFTER_BREAK = "MANUAL_START_AFTER_BREAK";
 const MODE = MANUAL_START_AFTER_BREAK;
 
-// const LIST = ['elsh3J5lJ6g', 'cL4uhaQ58Rk'];
-const LIST = ['LrzvNpNbdps', '0_CDMstFg7M'];
+const LIST = ['elsh3J5lJ6g', 'cL4uhaQ58Rk', 'elsh3J5lJ6g', 'cL4uhaQ58Rk', 'elsh3J5lJ6g'];
+// const LIST = ["LrzvNpNbdps", "0_CDMstFg7M"];
 
-const WORK_TIME = 20;
-const BREAK_TIME = 10;
-const TOTAL_SONGS = 2;
-
-const INITIAL = 'INITIAL';
-const WORKING = 'WORKING';
-const BREAK = 'BREAK';
+const WORK_TIME = 1500;
+const BREAK_TIME = 300;
+const TOTAL_SONGS = 5;
 
 export default class extends React.Component {
   static async getInitialProps({ req }) {
@@ -71,7 +70,7 @@ export default class extends React.Component {
   };
 
   onPlayerStateChange = event => {
-    console.log(event.data)
+    console.log(event.data);
     if (event.data === 0) {
       const { count } = this.state;
       if (count < TOTAL_SONGS) {
@@ -128,7 +127,7 @@ export default class extends React.Component {
         this.setState({ status: WORKING, curTime: WORK_TIME, count: 0 });
       }
     }
-  }
+  };
 
   computePercent = curTime => {
     const { status } = this.state;
@@ -136,10 +135,11 @@ export default class extends React.Component {
       return 180 - Math.floor(170 * ((WORK_TIME - curTime) / WORK_TIME));
     }
     return Math.floor(170 * ((BREAK_TIME - curTime) / BREAK_TIME)) + 10;
-  }
+  };
 
   componentWillUnmount() {
     clearInterval(this.timer);
+    this.player = null;
   }
 
   render() {
@@ -147,53 +147,24 @@ export default class extends React.Component {
     const percent = this.computePercent(curTime);
     return (
       <div className="container">
-        <main>
-          <header>
-            <h1 id="title">{status}</h1>
-          </header>
-          <div id="timer">{this.covertSecToMinSec(curTime)}</div>
-          <div style={{ position: "relative", width: 242, height: 210 }}>
-            <div
-              id="tomato-fill"
-              style={{
-                backgroundPosition: `0px ${status === INITIAL ? 180 : percent}px`
-              }}
-            />
-            <img
-              id="tomato"
-              src="/static/tomato.svg"
-              width="242"
-              height="210"
-            />
-            {status === INITIAL && (
-              <i
-                id="start-btn"
-                className="fas fa-play icon"
-                onClick={this.handleStart}
-              />
-            )}
-          </div>
-        </main>
-        <div id="menu">
-          <i
-            className="fas fa-music icon"
-            onClick={() => {
-              this.setState({ isOpen: true });
-            }}
-          />
-          <i className="fas fa-cog icon" />
-        </div>
-        <div
-          id="settings-wrapper"
-          style={{ opacity: isOpen ? 1 : 0, width: isOpen ? "100%" : 0 }}
-        >
-          <i
-            className="fas fa-times icon"
-            onClick={() => {
-              this.setState({ isOpen: false });
-            }}
-          />
-        </div>
+        <Main
+          status={status}
+          curTime={curTime}
+          percent={percent}
+          handleStart={this.handleStart}
+          covertSecToMinSec={this.covertSecToMinSec}
+        />
+        <Menu
+          handleOpenListPanel={() => {
+            this.setState({ isOpen: true });
+          }}
+        />
+        <ListPanel
+          isOpen={isOpen}
+          handleCloseListPanel={() => {
+            this.setState({ isOpen: false });
+          }}
+        />
         <div id="player" />
         <style jsx>{`
           div.container {
@@ -206,82 +177,6 @@ export default class extends React.Component {
             flex-direction: row;
             background-color: #f95f62;
           }
-          header {
-            position: absolute;
-            top: 0;
-          }
-          main {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            flex-grow: 1;
-          }
-          #start-btn {
-            display: block;
-            position: absolute;
-            width: 100%;
-            text-align: center;
-            top: 40%;
-            font-size: 52px;
-          }
-          #tomato {
-            position: absolute;
-            top: 0;
-          }
-          #tomato-fill {
-            position: relative;
-            top: 10px;
-            left: 12px;
-            width: 216px;
-            height: 190px;
-            border-radius: 50%;
-            background: url(https://www.colorhexa.com/b5e98b.png);
-            background-repeat: repeat-x;
-            background-size: cover;
-          }
-          #timer {
-            color: #a5e98b;
-            font-size: 56px;
-            text-align: center;
-          }
-          #title {
-            color: #fff;
-            text-align: center;
-          }
-          #menu {
-            position: absolute;
-            right: 0;
-            bottom: 0;
-            top: 0;
-            // background-color: #eeeeee38;
-            width: 100px;
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-start;
-            align-items: center;
-            padding: 40px 0;
-          }
-          .icon {
-            transition: all 0.2s ease-out;
-            transform: scale(1, 1);
-            cursor: pointer;
-            font-size: 36px;
-            color: #fff;
-            margin-bottom: 40px;
-          }
-          .icon:hover {
-            transform: scale(1.2, 1.2);
-          }
-          #settings-wrapper {
-            position: absolute;
-            background-color: #f95f62;
-            top: 0;
-            bottom: 0;
-            right: 0;
-            z-index: 99;
-            transition: all 0.5s ease-in;
-          }
           #player {
             position: fixed;
             bottom: 0;
@@ -293,6 +188,17 @@ export default class extends React.Component {
         <style global jsx>{`
           * {
             font-family: "Gloria Hallelujah", cursive;
+          }
+          .icon {
+            transition: all 0.2s ease-out;
+            transform: scale(1, 1);
+            cursor: pointer;
+            font-size: 36px;
+            color: #fff;
+            margin-bottom: 40px;
+          }
+          .icon:hover {
+            transform: scale(1.2, 1.2);
           }
         `}</style>
       </div>
