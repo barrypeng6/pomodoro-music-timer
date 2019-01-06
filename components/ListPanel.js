@@ -5,7 +5,7 @@ export default ({ isOpen, handleCloseListPanel }) => (
     id="settings-wrapper"
     style={{ opacity: isOpen ? 1 : 0, width: isOpen ? "100%" : 0 }}
   >
-    <i className="fas fa-times icon" onClick={handleCloseListPanel} />
+    {isOpen && <i className="fas fa-times icon" onClick={handleCloseListPanel} />}
     <style jsx>{`
       #settings-wrapper {
         position: absolute;
@@ -15,6 +15,11 @@ export default ({ isOpen, handleCloseListPanel }) => (
         right: 0;
         z-index: 99;
         transition: all 0.5s ease-in;
+      }
+      #settings-wrapper i {
+        font-size: 40px;
+        float: right;
+        margin: 40px;
       }
     `}</style>
   </div>

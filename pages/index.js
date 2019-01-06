@@ -1,35 +1,72 @@
 import React from "react";
+import fetch from "isomorphic-unfetch";
 import { Auth } from "@kkbox/kkbox-js-sdk";
 import getConfig from "next/config";
 
 import { Main, Menu, ListPanel } from "../components";
-import { INITIAL, WORKING, BREAK } from '../constants';
+import { INITIAL, WORKING, BREAK } from "../constants";
+import {
+  fetchMoodStations,
+  fetchSongsByMoodStation,
+  getRandomNums
+} from "../utils";
 
 const {
-  serverRuntimeConfig: { appId, appSecret }
+  serverRuntimeConfig: { APP_ID, APP_SECRET, YT_API_KEY }
 } = getConfig();
 
 const AUTO_START_AFTER_BREAK = "AUTO_START_AFTER_BREAK";
 const MANUAL_START_AFTER_BREAK = "MANUAL_START_AFTER_BREAK";
 const MODE = MANUAL_START_AFTER_BREAK;
 
-const LIST = ['elsh3J5lJ6g', 'cL4uhaQ58Rk', 'elsh3J5lJ6g', 'cL4uhaQ58Rk', 'elsh3J5lJ6g'];
-// const LIST = ["LrzvNpNbdps", "0_CDMstFg7M"];
-
 const WORK_TIME = 1500;
 const BREAK_TIME = 300;
-const TOTAL_SONGS = 5;
+const TOTAL_SONGS = 7;
 
 export default class extends React.Component {
   static async getInitialProps({ req }) {
     if (req) {
       // Create an auth object with client id and secret
-      const auth = new Auth(appId, appSecret);
+      const auth = new Auth(APP_ID, APP_SECRET);
 
       // Fetch your access token
       const authResponse = await auth.clientCredentialsFlow.fetchAccessToken();
       const access_token = authResponse.data.access_token;
-      return { access_token };
+
+      const moodStations = await fetchMoodStations(access_token);
+      const moodStation = await fetchSongsByMoodStation(
+        access_token,
+        "TZZ4fMCHdJNYqHEf-p"
+      );
+
+      const randomNums = getRandomNums(moodStation.songs.length);
+
+      const searchStrings = randomNums.map(num => {
+        return `${moodStation.songs[num].name.replace(
+          /\s+/g,
+          "+"
+        )}+${moodStation.songs[num].artist.replace(/\s+/g, "+")}`;
+      });
+
+      const videoIds = await Promise.all(
+        searchStrings.map(async str => {
+          const res = await fetch(
+            `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=1&order=relevance&q=${encodeURIComponent(
+              str
+            )}&type=video&key=${YT_API_KEY}`
+          );
+          const data = await res.json();
+          return data.items[0].id.videoId;
+        })
+      );
+
+      return {
+        videoIds,
+        searchStrings,
+        moodStation,
+        moodStations,
+        access_token
+      };
     }
     return {};
   }
@@ -37,6 +74,8 @@ export default class extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
+      videoIds: [],
+      moodStations: [],
       status: INITIAL,
       count: 0,
       curTime: WORK_TIME,
@@ -44,13 +83,14 @@ export default class extends React.Component {
     };
   }
 
-  componentDidMount() {
+  async componentDidMount() {
+    const { videoIds, moodStations } = this.props;
     // Setting up Youtube iframe
     window.onYouTubePlayerAPIReady = () => {
       this.player = new window.YT.Player("player", {
-        height: "100",
-        width: "180",
-        videoId: LIST[0],
+        height: "60",
+        width: "100",
+        videoId: videoIds[0],
         playerVars: {
           controls: 0,
           modestbranding: 1
@@ -61,6 +101,12 @@ export default class extends React.Component {
         }
       });
     };
+
+    console.log("==>", moodStations);
+    console.log(" work >>", this.props.moodStation);
+    console.log("==>", this.props.searchStrings);
+    console.log("===>", videoIds);
+    this.setState({ videoIds });
   }
 
   onPlayerReady = e => {
@@ -75,7 +121,7 @@ export default class extends React.Component {
       const { count } = this.state;
       if (count < TOTAL_SONGS) {
         console.log("continue");
-        this.player.loadVideoById(LIST[count + 1], 0, "small");
+        this.player.loadVideoById(this.props.videoIds[count + 1], 0, "small");
         this.setState({ count: count + 1 });
       } else {
         console.log("done");
@@ -105,6 +151,9 @@ export default class extends React.Component {
     } else {
       this.player.stopVideo();
       clearInterval(this.timer);
+      
+      // TODO: fetch new list
+
       this.setState({ status: BREAK, curTime: BREAK_TIME });
       this.timer = setInterval(this.handleCountDownBreakTime, 1000);
     }
@@ -116,8 +165,7 @@ export default class extends React.Component {
       this.setState({ curTime: curTime - 1 });
     } else {
       clearInterval(this.timer);
-      // TODO: fetch new list
-      this.player.loadVideoById(LIST[0], 0, "small");
+      this.player.loadVideoById(this.props.videoIds[0], 0, "small");
       this.player.stopVideo();
       if (MODE === MANUAL_START_AFTER_BREAK) {
         this.setState({ status: INITIAL, curTime: WORK_TIME, count: 0 });
@@ -143,14 +191,14 @@ export default class extends React.Component {
   }
 
   render() {
+    const { moodStation } = this.props;
     const { curTime, status, isOpen } = this.state;
-    const percent = this.computePercent(curTime);
     return (
       <div className="container">
         <Main
           status={status}
           curTime={curTime}
-          percent={percent}
+          percent={this.computePercent(curTime)}
           handleStart={this.handleStart}
           covertSecToMinSec={this.covertSecToMinSec}
         />
@@ -165,6 +213,7 @@ export default class extends React.Component {
             this.setState({ isOpen: false });
           }}
         />
+        <div id="mood-title">{moodStation.mood}</div>
         <div id="player" />
         <style jsx>{`
           div.container {
@@ -176,6 +225,12 @@ export default class extends React.Component {
             display: flex;
             flex-direction: row;
             background-color: #f95f62;
+          }
+          #mood-title {
+            position: fixed;
+            bottom: 90px;
+            right: 30px;
+            font-size: 14px;
           }
           #player {
             position: fixed;

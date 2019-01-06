@@ -2,8 +2,8 @@ import React from "react";
 
 export default ({ handleOpenListPanel }) => (
   <div id="menu">
-    <i className="fas fa-music icon" onClick={handleOpenListPanel} />
-    <i className="fas fa-cog icon" />
+    <span><i className="fas fa-music icon" onClick={handleOpenListPanel} /></span>
+    {/* <i className="fas fa-cog icon" /> */}
     <style jsx>{`
       #menu {
         position: absolute;

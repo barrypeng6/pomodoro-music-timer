@@ -1,6 +1,7 @@
 module.exports = {
   serverRuntimeConfig: {
-    appId: process.env.ID || '',
-    appSecret: process.env.SECRET || '',
+    APP_ID: process.env.ID || '',
+    APP_SECRET: process.env.SECRET || '',
+    YT_API_KEY: '',
   },
 }
