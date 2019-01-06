@@ -1,12 +1,47 @@
 import React from "react";
+import { Auth } from "@kkbox/kkbox-js-sdk";
+import getConfig from "next/config";
+
+const {
+  serverRuntimeConfig: { appId, appSecret }
+} = getConfig();
+
+const AUTO_START_AFTER_BREAK = 'AUTO_START_AFTER_BREAK';
+const MANUAL_START_AFTER_BREAK = 'MANUAL_START_AFTER_BREAK';
+const MODE = MANUAL_START_AFTER_BREAK;
+
+// const LIST = ['elsh3J5lJ6g', 'cL4uhaQ58Rk'];
+const LIST = ['LrzvNpNbdps', '0_CDMstFg7M'];
+
+const WORK_TIME = 20;
+const BREAK_TIME = 10;
+const TOTAL_SONGS = 2;
+
+const INITIAL = 'INITIAL';
+const WORKING = 'WORKING';
+const BREAK = 'BREAK';
 
 export default class extends React.Component {
+  static async getInitialProps({ req }) {
+    if (req) {
+      // Create an auth object with client id and secret
+      const auth = new Auth(appId, appSecret);
+
+      // Fetch your access token
+      const authResponse = await auth.clientCredentialsFlow.fetchAccessToken();
+      const access_token = authResponse.data.access_token;
+      return { access_token };
+    }
+    return {};
+  }
+
   constructor(props) {
     super(props);
     this.state = {
-      isPlaying: false,
-      curentSec: 0,
-      totalSec: 0
+      status: INITIAL,
+      count: 0,
+      curTime: WORK_TIME,
+      isOpen: false
     };
   }
 
@@ -16,7 +51,7 @@ export default class extends React.Component {
       this.player = new window.YT.Player("player", {
         height: "100",
         width: "180",
-        videoId: "elsh3J5lJ6g",
+        videoId: LIST[0],
         playerVars: {
           controls: 0,
           modestbranding: 1
@@ -31,60 +66,97 @@ export default class extends React.Component {
 
   onPlayerReady = e => {
     console.log("ready");
-    const duration = this.player.getDuration();
-    this.setState({ totalSec: duration, curentSec: duration });
+    // const duration = this.player.getDuration();
+    // this.setState({ curTime: WORK_TIME });
   };
 
-  onPlayerStateChange = e => {
+  onPlayerStateChange = event => {
+    console.log(event.data)
     if (event.data === 0) {
-      console.log("done");
-      clearInterval(this.timer);
+      const { count } = this.state;
+      if (count < TOTAL_SONGS) {
+        console.log("continue");
+        this.player.loadVideoById(LIST[count + 1], 0, "small");
+        this.setState({ count: count + 1 });
+      } else {
+        console.log("done");
+        clearInterval(this.timer);
+      }
     }
   };
 
-  covertSecToMinSec = curentSec => {
-    const min = Math.floor(curentSec / 60);
-    const sec = curentSec % 60;
+  covertSecToMinSec = curTime => {
+    const min = Math.floor(curTime / 60);
+    const sec = curTime % 60;
     return `${min < 10 ? `0${min}` : min}:${sec < 10 ? `0${sec}` : sec}`;
   };
 
   handleStart = () => {
     if (this.player) {
       this.player.playVideo();
-      this.timer = setInterval(this.handleCountDown, 1000);
-      this.setState({ isPlaying: true });
+      this.timer = setInterval(this.handleCountDownWorkTime, 1000);
+      this.setState({ status: WORKING });
     }
   };
 
-  handleCountDown = () => {
-    const { curentSec } = this.state;
-    if (curentSec > 0) {
-      this.setState({ curentSec: curentSec - 1 });
+  handleCountDownWorkTime = () => {
+    const { curTime } = this.state;
+    if (curTime > 0) {
+      this.setState({ curTime: curTime - 1 });
     } else {
+      this.player.stopVideo();
       clearInterval(this.timer);
+      this.setState({ status: BREAK, curTime: BREAK_TIME });
+      this.timer = setInterval(this.handleCountDownBreakTime, 1000);
     }
   };
+
+  handleCountDownBreakTime = () => {
+    const { curTime } = this.state;
+    if (curTime > 0) {
+      this.setState({ curTime: curTime - 1 });
+    } else {
+      clearInterval(this.timer);
+      // TODO: fetch new list
+      this.player.loadVideoById(LIST[0], 0, "small");
+      this.player.stopVideo();
+      if (MODE === MANUAL_START_AFTER_BREAK) {
+        this.setState({ status: INITIAL, curTime: WORK_TIME, count: 0 });
+      } else {
+        this.player.playVideo();
+        this.timer = setInterval(this.handleCountDownWorkTime, 1000);
+        this.setState({ status: WORKING, curTime: WORK_TIME, count: 0 });
+      }
+    }
+  }
+
+  computePercent = curTime => {
+    const { status } = this.state;
+    if (status === WORKING) {
+      return 180 - Math.floor(170 * ((WORK_TIME - curTime) / WORK_TIME));
+    }
+    return Math.floor(170 * ((BREAK_TIME - curTime) / BREAK_TIME)) + 10;
+  }
 
   componentWillUnmount() {
     clearInterval(this.timer);
   }
 
   render() {
-    const { totalSec, curentSec, isPlaying } = this.state;
-    const percent = 180 - Math.floor(170 * ((totalSec - curentSec) / totalSec));
+    const { curTime, status, isOpen } = this.state;
+    const percent = this.computePercent(curTime);
     return (
       <div className="container">
         <main>
           <header>
-            <h1 id="title">Pomodoro Music Timer</h1>
+            <h1 id="title">{status}</h1>
           </header>
-          <div id="timer">{this.covertSecToMinSec(curentSec)}</div>
-          {!isPlaying && <button onClick={this.handleStart}>Start</button>}
+          <div id="timer">{this.covertSecToMinSec(curTime)}</div>
           <div style={{ position: "relative", width: 242, height: 210 }}>
             <div
               id="tomato-fill"
               style={{
-                backgroundPosition: `0px ${!isPlaying ? 180 : percent}px`
+                backgroundPosition: `0px ${status === INITIAL ? 180 : percent}px`
               }}
             />
             <img
@@ -93,11 +165,34 @@ export default class extends React.Component {
               width="242"
               height="210"
             />
+            {status === INITIAL && (
+              <i
+                id="start-btn"
+                className="fas fa-play icon"
+                onClick={this.handleStart}
+              />
+            )}
           </div>
         </main>
         <div id="menu">
+          <i
+            className="fas fa-music icon"
+            onClick={() => {
+              this.setState({ isOpen: true });
+            }}
+          />
           <i className="fas fa-cog icon" />
-          <i className="fas fa-music icon" />
+        </div>
+        <div
+          id="settings-wrapper"
+          style={{ opacity: isOpen ? 1 : 0, width: isOpen ? "100%" : 0 }}
+        >
+          <i
+            className="fas fa-times icon"
+            onClick={() => {
+              this.setState({ isOpen: false });
+            }}
+          />
         </div>
         <div id="player" />
         <style jsx>{`
@@ -121,6 +216,14 @@ export default class extends React.Component {
             justify-content: center;
             align-items: center;
             flex-grow: 1;
+          }
+          #start-btn {
+            display: block;
+            position: absolute;
+            width: 100%;
+            text-align: center;
+            top: 40%;
+            font-size: 52px;
           }
           #tomato {
             position: absolute;
@@ -151,7 +254,7 @@ export default class extends React.Component {
             right: 0;
             bottom: 0;
             top: 0;
-            background-color: #eeeeee38;
+            // background-color: #eeeeee38;
             width: 100px;
             display: flex;
             flex-direction: column;
@@ -159,7 +262,7 @@ export default class extends React.Component {
             align-items: center;
             padding: 40px 0;
           }
-          #menu > .icon {
+          .icon {
             transition: all 0.2s ease-out;
             transform: scale(1, 1);
             cursor: pointer;
@@ -167,8 +270,17 @@ export default class extends React.Component {
             color: #fff;
             margin-bottom: 40px;
           }
-          #menu > .icon:hover {
+          .icon:hover {
             transform: scale(1.2, 1.2);
+          }
+          #settings-wrapper {
+            position: absolute;
+            background-color: #f95f62;
+            top: 0;
+            bottom: 0;
+            right: 0;
+            z-index: 99;
+            transition: all 0.5s ease-in;
           }
           #player {
             position: fixed;

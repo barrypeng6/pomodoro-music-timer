@@ -12,6 +12,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@kkbox/kkbox-js-sdk": "^1.3.3",
     "next": "^7.0.2",
     "react": "^16.7.0",
     "react-dom": "^16.7.0"
