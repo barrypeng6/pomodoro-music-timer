@@ -12,7 +12,7 @@ import {
 } from "../utils";
 
 const {
-  serverRuntimeConfig: { APP_ID, APP_SECRET, YT_API_KEY }
+  publicRuntimeConfig: { APP_ID, APP_SECRET, YT_API_KEY }
 } = getConfig();
 
 const AUTO_START_AFTER_BREAK = "AUTO_START_AFTER_BREAK";
@@ -22,6 +22,29 @@ const MODE = MANUAL_START_AFTER_BREAK;
 const WORK_TIME = 1500;
 const BREAK_TIME = 300;
 const TOTAL_SONGS = 7;
+
+const fetchVideoId = async songs => {
+  let count = 0;
+  let videoId;
+  while (videoId == null) {
+    const searchStr = `${songs[count].name.replace(/\s+/g, "+")}+${songs[count].artist.replace(
+      /\s+/g,
+      "+"
+    )}`;
+    const res = await fetch(
+      `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=1&order=relevance&q=${encodeURIComponent(
+        searchStr
+      )}&type=video&key=${YT_API_KEY}`
+    );
+    const data = await res.json();
+    if (data.items.length > 0)
+      videoId = data.items[0].id.videoId;
+  
+    console.log('==>', data, searchStr);
+    count++;
+  }
+  return videoId;
+};
 
 export default class extends React.Component {
   static async getInitialProps({ req }) {
@@ -33,36 +56,17 @@ export default class extends React.Component {
       const authResponse = await auth.clientCredentialsFlow.fetchAccessToken();
       const access_token = authResponse.data.access_token;
 
-      const moodStations = await fetchMoodStations(access_token);
+      const { data: moodStations } = await fetchMoodStations(access_token);
       const moodStation = await fetchSongsByMoodStation(
         access_token,
         "TZZ4fMCHdJNYqHEf-p"
       );
 
-      const randomNums = getRandomNums(moodStation.songs.length);
-
-      const searchStrings = randomNums.map(num => {
-        return `${moodStation.songs[num].name.replace(
-          /\s+/g,
-          "+"
-        )}+${moodStation.songs[num].artist.replace(/\s+/g, "+")}`;
-      });
-
-      const videoIds = await Promise.all(
-        searchStrings.map(async str => {
-          const res = await fetch(
-            `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=1&order=relevance&q=${encodeURIComponent(
-              str
-            )}&type=video&key=${YT_API_KEY}`
-          );
-          const data = await res.json();
-          return data.items[0].id.videoId;
-        })
-      );
+      const videoId = await fetchVideoId(moodStation.songs);
 
       return {
-        videoIds,
-        searchStrings,
+        videoIds: [videoId],
+        // searchStrings,
         moodStation,
         moodStations,
         access_token
@@ -74,7 +78,7 @@ export default class extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      videoIds: [],
+      videoIds: props.videoIds,
       moodStations: [],
       status: INITIAL,
       count: 0,
@@ -84,7 +88,8 @@ export default class extends React.Component {
   }
 
   async componentDidMount() {
-    const { videoIds, moodStations } = this.props;
+    const { moodStations } = this.props;
+    const { videoIds } = this.state;
     // Setting up Youtube iframe
     window.onYouTubePlayerAPIReady = () => {
       this.player = new window.YT.Player("player", {
@@ -104,9 +109,7 @@ export default class extends React.Component {
 
     console.log("==>", moodStations);
     console.log(" work >>", this.props.moodStation);
-    console.log("==>", this.props.searchStrings);
     console.log("===>", videoIds);
-    this.setState({ videoIds });
   }
 
   onPlayerReady = e => {
@@ -121,7 +124,7 @@ export default class extends React.Component {
       const { count } = this.state;
       if (count < TOTAL_SONGS) {
         console.log("continue");
-        this.player.loadVideoById(this.props.videoIds[count + 1], 0, "small");
+        this.player.loadVideoById(this.state.videoIds[count + 1], 0, "small");
         this.setState({ count: count + 1 });
       } else {
         console.log("done");
@@ -144,35 +147,39 @@ export default class extends React.Component {
     }
   };
 
-  handleCountDownWorkTime = () => {
-    const { curTime } = this.state;
+  handleCountDownWorkTime = async () => {
+    const { moodStation } = this.props;
+    const { curTime, count, videoIds } = this.state;
     if (curTime > 0) {
-      this.setState({ curTime: curTime - 1 });
+      if (Math.floor(this.player.getDuration() - this.player.getCurrentTime()) === 30) {
+        const videoId = await fetchVideoId(moodStation.songs.slice(count + 1));
+        console.log(videoId, videoIds)
+        this.setState({ videoIds: [...videoIds, videoId], curTime: curTime - 1 });
+      } else {
+        this.setState({ curTime: curTime - 1 });
+      }
     } else {
       this.player.stopVideo();
       clearInterval(this.timer);
-      
-      // TODO: fetch new list
-
       this.setState({ status: BREAK, curTime: BREAK_TIME });
       this.timer = setInterval(this.handleCountDownBreakTime, 1000);
     }
   };
 
   handleCountDownBreakTime = () => {
-    const { curTime } = this.state;
+    const { curTime, count } = this.state;
     if (curTime > 0) {
       this.setState({ curTime: curTime - 1 });
     } else {
       clearInterval(this.timer);
-      this.player.loadVideoById(this.props.videoIds[0], 0, "small");
+      this.player.loadVideoById(this.state.videoIds[count + 1], 0, "small");
       this.player.stopVideo();
       if (MODE === MANUAL_START_AFTER_BREAK) {
-        this.setState({ status: INITIAL, curTime: WORK_TIME, count: 0 });
+        this.setState({ status: INITIAL, curTime: WORK_TIME });
       } else {
         this.player.playVideo();
         this.timer = setInterval(this.handleCountDownWorkTime, 1000);
-        this.setState({ status: WORKING, curTime: WORK_TIME, count: 0 });
+        this.setState({ status: WORKING, curTime: WORK_TIME });
       }
     }
   };
@@ -191,7 +198,7 @@ export default class extends React.Component {
   }
 
   render() {
-    const { moodStation } = this.props;
+    const { moodStation, moodStations } = this.props;
     const { curTime, status, isOpen } = this.state;
     return (
       <div className="container">
@@ -208,6 +215,7 @@ export default class extends React.Component {
           }}
         />
         <ListPanel
+          moodStations={moodStations}
           isOpen={isOpen}
           handleCloseListPanel={() => {
             this.setState({ isOpen: false });
