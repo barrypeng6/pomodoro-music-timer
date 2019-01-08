@@ -27,20 +27,18 @@ const fetchVideoId = async songs => {
   let count = 0;
   let videoId;
   while (videoId == null) {
-    const searchStr = `${songs[count].name.replace(/\s+/g, "+")}+${songs[count].artist.replace(
-      /\s+/g,
-      "+"
-    )}`;
+    const searchStr = `${songs[count].name.replace(/\s+/g, "+")}+${songs[
+      count
+    ].artist.replace(/\s+/g, "+")}`;
     const res = await fetch(
       `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=1&order=relevance&q=${encodeURIComponent(
         searchStr
       )}&type=video&key=${YT_API_KEY}`
     );
     const data = await res.json();
-    if (data.items.length > 0)
-      videoId = data.items[0].id.videoId;
-  
-    console.log('==>', data, searchStr);
+    if (data.items.length > 0) videoId = data.items[0].id.videoId;
+
+    console.log("==>", data, searchStr);
     count++;
   }
   return videoId;
@@ -79,11 +77,13 @@ export default class extends React.Component {
     super(props);
     this.state = {
       videoIds: props.videoIds,
+      activeStation: props.moodStation,
       moodStations: [],
       status: INITIAL,
       count: 0,
       curTime: WORK_TIME,
-      isOpen: false
+      isOpen: false,
+      isLoading: false,
     };
   }
 
@@ -151,10 +151,16 @@ export default class extends React.Component {
     const { moodStation } = this.props;
     const { curTime, count, videoIds } = this.state;
     if (curTime > 0) {
-      if (Math.floor(this.player.getDuration() - this.player.getCurrentTime()) === 30) {
+      if (
+        Math.floor(this.player.getDuration() - this.player.getCurrentTime()) ===
+        30
+      ) {
         const videoId = await fetchVideoId(moodStation.songs.slice(count + 1));
-        console.log(videoId, videoIds)
-        this.setState({ videoIds: [...videoIds, videoId], curTime: curTime - 1 });
+        console.log(videoId, videoIds);
+        this.setState({
+          videoIds: [...videoIds, videoId],
+          curTime: curTime - 1
+        });
       } else {
         this.setState({ curTime: curTime - 1 });
       }
@@ -184,6 +190,18 @@ export default class extends React.Component {
     }
   };
 
+  changeActiveStation = async id => {
+    console.log(id);
+    this.setState({ isOpen: false, isLoading: true });
+
+    const moodStation = await fetchSongsByMoodStation(this.props.access_token, id);
+
+    const videoId = await fetchVideoId(moodStation.songs);
+    this.player.loadVideoById(videoId, 0, "small");
+    this.player.stopVideo();
+    this.setState({ isLoading: false, activeStation: moodStation, videoIds: [videoId] });
+  };
+
   computePercent = curTime => {
     const { status } = this.state;
     if (status === WORKING) {
@@ -199,7 +217,7 @@ export default class extends React.Component {
 
   render() {
     const { moodStation, moodStations } = this.props;
-    const { curTime, status, isOpen } = this.state;
+    const { activeStation, curTime, status, isOpen, isLoading } = this.state;
     return (
       <div className="container">
         <Main
@@ -210,18 +228,25 @@ export default class extends React.Component {
           covertSecToMinSec={this.covertSecToMinSec}
         />
         <Menu
+          isOpen={isOpen}
+          isLoading={isLoading}
+          activeStation={activeStation}
+          moodStations={moodStations}
           handleOpenListPanel={() => {
             this.setState({ isOpen: true });
           }}
+          handleCloseListPanel={() => {
+            this.setState({ isOpen: false });
+          }}
+          changeActiveStation={this.changeActiveStation}
         />
-        <ListPanel
+        {/*<ListPanel
           moodStations={moodStations}
           isOpen={isOpen}
           handleCloseListPanel={() => {
             this.setState({ isOpen: false });
           }}
-        />
-        <div id="mood-title">{moodStation.mood}</div>
+        />*/}
         <div id="player" />
         <style jsx>{`
           div.container {
@@ -230,15 +255,7 @@ export default class extends React.Component {
             bottom: 0;
             left: 0;
             right: 0;
-            display: flex;
-            flex-direction: row;
             background-color: #f95f62;
-          }
-          #mood-title {
-            position: fixed;
-            bottom: 90px;
-            right: 30px;
-            font-size: 14px;
           }
           #player {
             position: fixed;
@@ -246,6 +263,11 @@ export default class extends React.Component {
             right: 0;
             margin: 20px;
             box-shadow: 1px 1px 3px 1px #333;
+            transition: all 0.5s cubic-bezier(0.39, 0.58, 0.57, 1);
+          }
+          #player:hover {
+            width: 426px;
+            height: 240px;
           }
         `}</style>
         <style global jsx>{`
@@ -258,7 +280,6 @@ export default class extends React.Component {
             cursor: pointer;
             font-size: 36px;
             color: #fff;
-            margin-bottom: 40px;
           }
           .icon:hover {
             transform: scale(1.2, 1.2);
