@@ -28,23 +28,33 @@ const getMappingEmoji = mood => {
   }
 };
 
-export default ({ moodStations, isOpen, handleCloseListPanel }) => (
+export default ({
+  changeActiveStation,
+  moodStations,
+  isOpen,
+  isLoading,
+  handleCloseListPanel
+}) => (
   <div
     id="settings-wrapper"
-    style={{ opacity: isOpen ? 1 : 0, width: isOpen ? "100%" : 0 }}
+    style={{
+      bottom: isOpen ? 0 : "-95%",
+      left: isOpen ? 0 : "-95%",
+      transform: isOpen ? "scale(1)" : "scale(0)"
+    }}
   >
     {isOpen && (
       <i className="fas fa-times icon" onClick={handleCloseListPanel} />
     )}
 
     <div className="library">
-      {moodStations.map(station => {
+      {isLoading ? 'loadding...' : moodStations.map(station => {
         return (
           <div
             key={station.id}
             className="emoji-wrapper"
             onClick={() => {
-              console.log(">>>>", station.name);
+              changeActiveStation(station.id);
             }}
           >
             {getMappingEmoji(station.name)}
@@ -56,10 +66,11 @@ export default ({ moodStations, isOpen, handleCloseListPanel }) => (
       #settings-wrapper {
         position: absolute;
         background-color: #f95f62;
-        top: 0;
-        bottom: 0;
-        right: 0;
+        // bottom: 0;
+        // left: 0;
         z-index: 99;
+        width: 100%;
+        height: 100%;
         transition: all 0.5s ease-in;
       }
       #settings-wrapper i {

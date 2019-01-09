@@ -29,8 +29,6 @@ const getMappingEmoji = mood => {
 };
 
 export default ({
-  isOpen,
-  isLoading,
   activeStation,
   moodStations,
   handleOpenListPanel,
@@ -38,31 +36,11 @@ export default ({
   changeActiveStation
 }) => (
   <div id="menu">
-    <span
-      id="popup-mood"
-      style={{
-        lineHeight: isOpen ? "35px" : "50px",
-        height: isOpen ? 350 : 50
-      }}
-    >
-      {isOpen ? (
-        moodStations.map(station => (
-          <div key={station.id} onClick={() => changeActiveStation(station.id)}>
-            <Emoji symbol={getMappingEmoji(station.name)} />
-          </div>
-        ))
-      ) : (
-        <div>
-          {isLoading ? '...' : <Emoji symbol={getMappingEmoji(activeStation.mood)} />}
-        </div>
-      )}
+    <span id="popup-mood">
+      <Emoji symbol={getMappingEmoji(activeStation.mood)} />
     </span>
-    <span className={`icon-wrapper ${isOpen ? "open" : ""}`}>
-      {isOpen ? (
-        <i className="fas fa-times icon" onClick={handleCloseListPanel} />
-      ) : (
-        <i className="fas fa-music icon" onClick={handleOpenListPanel} />
-      )}
+    <span className="icon-wrapper">
+      <i className="fas fa-music icon" onClick={handleOpenListPanel} />
     </span>
     <span className="icon-wrapper">
       <i className="fas fa-cog icon" />
@@ -81,24 +59,22 @@ export default ({
         margin-right: 25px;
         display: inline-block;
       }
-      span.open {
-        margin-left: 12px;
-      }
       span#popup-mood {
         position: absolute;
         content: "";
         width: 50px;
-        // height: 50px;
+        height: 50px;
         background-color: #f78b8d;
         bottom: 70px;
         border-radius: 25px;
         left: 40px;
         line-height: 50px;
+        margin: 0 auto;
         text-align: center;
+        font-size: 28px;
         box-shadow: 1px 1px 1px 0px #795548;
         transition: height 0.5s ease-in;
-        // overflow: hidden;
-        // animation: floating 2s infinite;
+        animation: floating 2s infinite;
       }
 
       @keyframes floating {

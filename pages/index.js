@@ -192,14 +192,14 @@ export default class extends React.Component {
 
   changeActiveStation = async id => {
     console.log(id);
-    this.setState({ isOpen: false, isLoading: true });
+    this.setState({ isLoading: true });
 
     const moodStation = await fetchSongsByMoodStation(this.props.access_token, id);
 
     const videoId = await fetchVideoId(moodStation.songs);
     this.player.loadVideoById(videoId, 0, "small");
     this.player.stopVideo();
-    this.setState({ isLoading: false, activeStation: moodStation, videoIds: [videoId] });
+    this.setState({ isOpen: false, isLoading: false, activeStation: moodStation, videoIds: [videoId] });
   };
 
   computePercent = curTime => {
@@ -228,8 +228,6 @@ export default class extends React.Component {
           covertSecToMinSec={this.covertSecToMinSec}
         />
         <Menu
-          isOpen={isOpen}
-          isLoading={isLoading}
           activeStation={activeStation}
           moodStations={moodStations}
           handleOpenListPanel={() => {
@@ -238,15 +236,16 @@ export default class extends React.Component {
           handleCloseListPanel={() => {
             this.setState({ isOpen: false });
           }}
-          changeActiveStation={this.changeActiveStation}
         />
-        {/*<ListPanel
+        <ListPanel
           moodStations={moodStations}
           isOpen={isOpen}
+          isLoading={isLoading}
           handleCloseListPanel={() => {
             this.setState({ isOpen: false });
           }}
-        />*/}
+          changeActiveStation={this.changeActiveStation}
+        />
         <div id="player" />
         <style jsx>{`
           div.container {
