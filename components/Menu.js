@@ -1,32 +1,6 @@
 import React from "react";
 import Emoji from "./Emoji";
-
-const getMappingEmoji = mood => {
-  switch (mood) {
-    case "Work Out":
-      return "🏋️";
-    case "Party Animal":
-      return "🎉";
-    case "Relaxing":
-      return "😎";
-    case "Working Time":
-      return "💻";
-    case "Romantic":
-      return "🌹";
-    case "Vacation":
-      return "🏖";
-    case "Chill Out":
-      return "☕";
-    case "Tipsy Night":
-      return "🥂";
-    case "Acoustic Pop":
-      return "🎻";
-    case "Hardcore":
-      return "🎸";
-    default:
-      return "🌏";
-  }
-};
+import getMappingEmoji from '../utils/getMappingEmoji';
 
 export default ({
   activeStation,
@@ -36,9 +10,9 @@ export default ({
   changeActiveStation
 }) => (
   <div id="menu">
-    <span id="popup-mood">
+    {activeStation && <span id="popup-mood">
       <Emoji symbol={getMappingEmoji(activeStation.mood)} />
-    </span>
+    </span>}
     <span className="icon-wrapper">
       <i className="fas fa-music icon" onClick={handleOpenListPanel} />
     </span>

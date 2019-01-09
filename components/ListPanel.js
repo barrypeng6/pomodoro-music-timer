@@ -1,32 +1,6 @@
 import React from "react";
 import Emoji from "./Emoji";
-
-const getMappingEmoji = mood => {
-  switch (mood) {
-    case "Work Out":
-      return <Emoji symbol="🏋️" lable="Person Lifting Weights" />;
-    case "Party Animal":
-      return <Emoji symbol="🎉" lable="Party Popper" />;
-    case "Relaxing":
-      return <Emoji symbol="😎" lable="Smiling Face With Sunglasses" />;
-    case "Working Time":
-      return <Emoji symbol="💻" lable="Laptop Computer" />;
-    case "Romantic":
-      return <Emoji symbol="🌹" lable="Rose" />;
-    case "Vacation":
-      return <Emoji symbol="🏖" lable="️️Beach With Umbrella" />;
-    case "Chill Out":
-      return <Emoji symbol="☕" lable="Hot Beverage" />;
-    case "Tipsy Night":
-      return <Emoji symbol="🥂" lable="Clinking Glasses" />;
-    case "Acoustic Pop":
-      return <Emoji symbol="🎻" lable="Violin" />;
-    case "Hardcore":
-      return <Emoji symbol="🎸" lable="Guitar" />;
-    default:
-      return <Emoji symbol="🌏" lable="Globe Showing Asia-Australia" />;
-  }
-};
+import getMappingEmoji from '../utils/getMappingEmoji';
 
 export default ({
   changeActiveStation,
@@ -57,7 +31,8 @@ export default ({
               changeActiveStation(station.id);
             }}
           >
-            {getMappingEmoji(station.name)}
+            <Emoji symbol={getMappingEmoji(station.name)} />
+            <div style={{ fontSize: 12 }}>{station.name}</div>
           </div>
         );
       })}
@@ -66,8 +41,6 @@ export default ({
       #settings-wrapper {
         position: absolute;
         background-color: #f95f62;
-        // bottom: 0;
-        // left: 0;
         z-index: 99;
         width: 100%;
         height: 100%;
@@ -88,10 +61,12 @@ export default ({
       }
       .emoji-wrapper {
         display: flex;
+        flex-direction: column;
         justify-content: center;
         align-items: center;
         width: 100px;
         height: 100px;
+        line-height: 40px;
         font-size: 40px;
         cursor: pointer;
         transition: all 0.3s ease-in-out;
@@ -99,6 +74,23 @@ export default ({
       }
       .emoji-wrapper:hover {
         background-color: #ed143d;
+      }
+
+      @media screen and (max-width: 375px) {
+        #settings-wrapper i {
+          font-size: 30px;
+          margin: 20px;
+        }
+
+        .emoji-wrapper {
+          width: 80px;
+          height: 80px;
+          font-size: 30px;
+          line-height: 30px;
+        }
+        .library {
+          margin-top: 70px;
+        }
       }
     `}</style>
   </div>

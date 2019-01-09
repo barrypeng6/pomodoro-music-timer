@@ -1,9 +1,9 @@
 import fetchMoodStations from './fetchMoodStations';
 import fetchSongsByMoodStation from './fetchSongsByMoodStation';
-import getRandomNums from './getRandomNums';
+import beep from './beep';
 
 export {
   fetchMoodStations,
   fetchSongsByMoodStation,
-  getRandomNums,
+  beep,
 };

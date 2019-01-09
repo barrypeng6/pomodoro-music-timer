@@ -1,9 +1,9 @@
-const INITIAL = "INITIAL";
+const READY = "READY?";
 const WORKING = "WORKING";
 const BREAK = "BREAK";
 
 export {
-  INITIAL,
+  READY,
   WORKING,
   BREAK,
 };

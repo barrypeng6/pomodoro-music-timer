@@ -4,12 +4,8 @@ import { Auth } from "@kkbox/kkbox-js-sdk";
 import getConfig from "next/config";
 
 import { Main, Menu, ListPanel } from "../components";
-import { INITIAL, WORKING, BREAK } from "../constants";
-import {
-  fetchMoodStations,
-  fetchSongsByMoodStation,
-  getRandomNums
-} from "../utils";
+import { READY, WORKING, BREAK } from "../constants";
+import { fetchMoodStations, fetchSongsByMoodStation, beep } from "../utils";
 
 const {
   publicRuntimeConfig: { APP_ID, APP_SECRET, YT_API_KEY }
@@ -21,7 +17,8 @@ const MODE = MANUAL_START_AFTER_BREAK;
 
 const WORK_TIME = 1500;
 const BREAK_TIME = 300;
-const TOTAL_SONGS = 7;
+
+const FIRST_BEEP_TIME = 60;
 
 const fetchVideoId = async songs => {
   let count = 0;
@@ -55,17 +52,11 @@ export default class extends React.Component {
       const access_token = authResponse.data.access_token;
 
       const { data: moodStations } = await fetchMoodStations(access_token);
-      const moodStation = await fetchSongsByMoodStation(
-        access_token,
-        "TZZ4fMCHdJNYqHEf-p"
-      );
-
-      const videoId = await fetchVideoId(moodStation.songs);
 
       return {
-        videoIds: [videoId],
+        // videoIds: [videoId],
         // searchStrings,
-        moodStation,
+        // moodStation,
         moodStations,
         access_token
       };
@@ -79,23 +70,31 @@ export default class extends React.Component {
       videoIds: props.videoIds,
       activeStation: props.moodStation,
       moodStations: [],
-      status: INITIAL,
+      status: READY,
       count: 0,
       curTime: WORK_TIME,
       isOpen: false,
-      isLoading: false,
+      isLoading: false
     };
   }
 
   async componentDidMount() {
-    const { moodStations } = this.props;
-    const { videoIds } = this.state;
     // Setting up Youtube iframe
-    window.onYouTubePlayerAPIReady = () => {
+    window.onYouTubePlayerAPIReady = async () => {
+      const id = localStorage.getItem("moodStationId");
+      console.log("ID: ", id);
+
+      const moodStation = await fetchSongsByMoodStation(
+        access_token,
+        id || "TZZ4fMCHdJNYqHEf-p"
+      );
+      console.log(moodStation);
+      const videoId = await fetchVideoId(moodStation.songs);
+
       this.player = new window.YT.Player("player", {
         height: "60",
         width: "100",
-        videoId: videoIds[0],
+        videoId: videoId,
         playerVars: {
           controls: 0,
           modestbranding: 1
@@ -105,11 +104,15 @@ export default class extends React.Component {
           onStateChange: this.onPlayerStateChange
         }
       });
+
+      this.setState({ activeStation: moodStation, videoIds: [videoId] });
     };
 
-    console.log("==>", moodStations);
-    console.log(" work >>", this.props.moodStation);
-    console.log("===>", videoIds);
+    const { moodStations, access_token } = this.props;
+
+    // console.log("==>", moodStations);
+    // console.log(" work >>", this.props.moodStation);
+    // console.log("===>", videoIds);
   }
 
   onPlayerReady = e => {
@@ -122,14 +125,8 @@ export default class extends React.Component {
     console.log(event.data);
     if (event.data === 0) {
       const { count } = this.state;
-      if (count < TOTAL_SONGS) {
-        console.log("continue");
-        this.player.loadVideoById(this.state.videoIds[count + 1], 0, "small");
-        this.setState({ count: count + 1 });
-      } else {
-        console.log("done");
-        clearInterval(this.timer);
-      }
+      this.player.loadVideoById(this.state.videoIds[count + 1], 0, "small");
+      this.setState({ count: count + 1 });
     }
   };
 
@@ -148,14 +145,15 @@ export default class extends React.Component {
   };
 
   handleCountDownWorkTime = async () => {
-    const { moodStation } = this.props;
-    const { curTime, count, videoIds } = this.state;
+    const { activeStation, curTime, count, videoIds } = this.state;
     if (curTime > 0) {
       if (
         Math.floor(this.player.getDuration() - this.player.getCurrentTime()) ===
         30
       ) {
-        const videoId = await fetchVideoId(moodStation.songs.slice(count + 1));
+        const videoId = await fetchVideoId(
+          activeStation.songs.slice(count + 1)
+        );
         console.log(videoId, videoIds);
         this.setState({
           videoIds: [...videoIds, videoId],
@@ -164,6 +162,9 @@ export default class extends React.Component {
       } else {
         this.setState({ curTime: curTime - 1 });
       }
+
+      if (curTime === FIRST_BEEP_TIME) beep(3);
+      if (curTime === 0) beep(5);
     } else {
       this.player.stopVideo();
       clearInterval(this.timer);
@@ -181,7 +182,7 @@ export default class extends React.Component {
       this.player.loadVideoById(this.state.videoIds[count + 1], 0, "small");
       this.player.stopVideo();
       if (MODE === MANUAL_START_AFTER_BREAK) {
-        this.setState({ status: INITIAL, curTime: WORK_TIME });
+        this.setState({ status: READY, curTime: WORK_TIME });
       } else {
         this.player.playVideo();
         this.timer = setInterval(this.handleCountDownWorkTime, 1000);
@@ -192,14 +193,24 @@ export default class extends React.Component {
 
   changeActiveStation = async id => {
     console.log(id);
-    this.setState({ isLoading: true });
+    clearInterval(this.timer);
+    this.setState({ isLoading: true, status: READY });
 
-    const moodStation = await fetchSongsByMoodStation(this.props.access_token, id);
+    const moodStation = await fetchSongsByMoodStation(
+      this.props.access_token,
+      id
+    );
+    localStorage.setItem("moodStationId", id);
 
     const videoId = await fetchVideoId(moodStation.songs);
     this.player.loadVideoById(videoId, 0, "small");
     this.player.stopVideo();
-    this.setState({ isOpen: false, isLoading: false, activeStation: moodStation, videoIds: [videoId] });
+    this.setState({
+      isOpen: false,
+      isLoading: false,
+      activeStation: moodStation,
+      videoIds: [videoId],
+    });
   };
 
   computePercent = curTime => {
@@ -216,7 +227,7 @@ export default class extends React.Component {
   }
 
   render() {
-    const { moodStation, moodStations } = this.props;
+    const { moodStations } = this.props;
     const { activeStation, curTime, status, isOpen, isLoading } = this.state;
     return (
       <div className="container">

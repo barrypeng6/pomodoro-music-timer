@@ -1,16 +1,16 @@
 import React from "react";
-import { INITIAL } from "../constants";
+import { READY } from "../constants";
 
 export default ({ status, handleStart, percent }) => (
   <div id="tomato-wrapper">
     <div
       id="tomato-fill"
       style={{
-        backgroundPosition: `0px ${status === INITIAL ? 180 : percent}px`
+        backgroundPosition: `0px ${status === READY ? 180 : percent}px`
       }}
     />
     <img id="tomato" src="/static/tomato.svg" width="242" height="210" />
-    {status === INITIAL && (
+    {status === READY && (
       <i id="start-btn" className="fas fa-play icon" onClick={handleStart} />
     )}
     <style jsx>{`
