@@ -25,7 +25,7 @@ export default class MyDocument extends Document {
         </Head>
         <body>
           <Main />
-          <script src="http://www.youtube.com/player_api"></script>
+          <script src="https://www.youtube.com/player_api"></script>
           <NextScript />
         </body>
       </html>
