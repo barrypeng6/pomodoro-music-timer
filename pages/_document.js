@@ -1,4 +1,5 @@
-import Document, { Head, Main, NextScript } from "next/document";
+import React from 'react';
+import Document, { Head, Main, NextScript } from 'next/document';
 
 export default class MyDocument extends Document {
   static async getInitialProps(ctx) {
@@ -8,12 +9,24 @@ export default class MyDocument extends Document {
 
   render() {
     return (
-      <html>
+      <html lang="en-US">
         <Head>
-          <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
-          <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.3/css/all.css" integrity="sha384-UHRtZLI+pbxtHCWp1t77Bi1L4ZtiqrqD80Kn4Z8NTSRyMA2Fd33n5dQ8lWUE00s/" crossOrigin="anonymous"></link>
-          <link href="https://fonts.googleapis.com/css?family=Gloria+Hallelujah" rel="stylesheet"></link>
-          <style>{`
+          <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1, user-scalable=no"
+          />
+          <link
+            rel="stylesheet"
+            href="https://use.fontawesome.com/releases/v5.6.3/css/all.css"
+            integrity="sha384-UHRtZLI+pbxtHCWp1t77Bi1L4ZtiqrqD80Kn4Z8NTSRyMA2Fd33n5dQ8lWUE00s/"
+            crossOrigin="anonymous"
+          />
+          <link
+            href="https://fonts.googleapis.com/css?family=Gloria+Hallelujah"
+            rel="stylesheet"
+          />
+          <style>
+            {`
             html {
               height: 100%;
             }
@@ -21,11 +34,12 @@ export default class MyDocument extends Document {
               margin: 0;
               height: 100%;
             }
-          `}</style>
+          `}
+          </style>
         </Head>
         <body>
           <Main />
-          <script src="https://www.youtube.com/player_api"></script>
+          <script src="https://www.youtube.com/player_api" />
           <NextScript />
         </body>
       </html>

@@ -1,6 +1,11 @@
 import React from 'react';
+import getConfig from 'next/config';
 import Emoji from './Emoji';
 import getMappingEmoji from '../utils/getMappingEmoji';
+
+const {
+  publicRuntimeConfig: { APP_ID },
+} = getConfig();
 
 export default ({ activeStation, handleOpenListPanel }) => (
   <div id="menu">
@@ -14,6 +19,13 @@ export default ({ activeStation, handleOpenListPanel }) => (
     </span>
     <span className="icon-wrapper">
       <i className="fas fa-cog icon" />
+    </span>
+    <span>
+      <a
+        href={`https://account.kkbox.com/oauth2/authorize?redirect_uri=${encodeURIComponent('https://music-pomodoro.now.sh')}&client_id=${APP_ID}&response_type=code&state=test`}
+      >
+        Login with KKBOX
+      </a>
     </span>
     <style jsx>
       {`

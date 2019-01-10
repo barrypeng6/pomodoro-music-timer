@@ -46,14 +46,27 @@ const fetchVideoId = async (songs) => {
 };
 
 export default class extends React.Component {
-  static async getInitialProps({ req }) {
+  static async getInitialProps({ req, query }) {
+    console.log('query', query);
     if (req) {
-      // Create an auth object with client id and secret
-      const auth = new Auth(APP_ID, APP_SECRET);
+      let access_token;
+      const { code = null } = query;
+      if (code) {
+        const codeRes = await fetch(
+          `https://account.kkbox.com/oauth2/token?grant_type=authorization_code&code=${code}&client_id=${APP_ID}&client_secret=${APP_SECRET}`,
+        );
 
-      // Fetch your access token
-      const authResponse = await auth.clientCredentialsFlow.fetchAccessToken();
-      const { access_token } = authResponse.data;
+        const data = await codeRes.json();
+        access_token = data.access_token; // eslint-disable-line
+        console.log('access_token', access_token);
+      } else {
+        // Create an auth object with client id and secret
+        const auth = new Auth(APP_ID, APP_SECRET);
+
+        // Fetch your access token
+        const authResponse = await auth.clientCredentialsFlow.fetchAccessToken();
+        access_token = authResponse.data.access_token; // eslint-disable-line
+      }
 
       const { data: moodStations } = await fetchMoodStations(access_token);
 
