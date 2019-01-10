@@ -1,4 +1,4 @@
-import { Api } from "@kkbox/kkbox-js-sdk";
+import { Api } from '@kkbox/kkbox-js-sdk';
 
 const fetchMoodStation = async (api, id) => {
   const { status, data } = await api.moodStationFetcher
@@ -9,7 +9,7 @@ const fetchMoodStation = async (api, id) => {
   const songs = data.tracks.data.map(track => ({
     name: track.name,
     album: track.album.name,
-    artist: track.album.artist.name
+    artist: track.album.artist.name,
   }));
   if (status === 200) return { mood, image, songs };
   return null;
@@ -21,7 +21,7 @@ export default async (token, id) => {
     const moodStation = await fetchMoodStation(api, id);
     return moodStation;
   } catch (error) {
-    localStorage.removeItem("moodStationId");
+    window.localStorage.removeItem('moodStationId');
     const moodStation = await fetchMoodStation(api, 'TZZ4fMCHdJNYqHEf-p');
     return moodStation;
   }
