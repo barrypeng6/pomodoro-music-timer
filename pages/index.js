@@ -74,7 +74,8 @@ export default class extends React.Component {
       count: 0,
       curTime: WORK_TIME,
       isOpen: false,
-      isLoading: false
+      isLoading: false,
+      isPlayerReady: true,
     };
   }
 
@@ -117,8 +118,7 @@ export default class extends React.Component {
 
   onPlayerReady = e => {
     console.log("ready");
-    // const duration = this.player.getDuration();
-    // this.setState({ curTime: WORK_TIME });
+    this.setState({ isPlayerReady: true });
   };
 
   onPlayerStateChange = event => {
@@ -228,10 +228,11 @@ export default class extends React.Component {
 
   render() {
     const { moodStations } = this.props;
-    const { activeStation, curTime, status, isOpen, isLoading } = this.state;
+    const { activeStation, curTime, status, isOpen, isLoading, isPlayerReady } = this.state;
     return (
       <div className="container">
         <Main
+          isPlayerReady={isPlayerReady}
           status={status}
           curTime={curTime}
           percent={this.computePercent(curTime)}

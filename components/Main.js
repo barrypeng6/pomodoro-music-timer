@@ -6,13 +6,14 @@ export default ({
   curTime,
   percent,
   handleStart,
-  covertSecToMinSec
+  covertSecToMinSec,
+  isPlayerReady,
 }) => (
   <div>
     <div id="title">{status}</div>
     <main>
       <div id="timer">{covertSecToMinSec(curTime)}</div>
-      <Tomato status={status} percent={percent} handleStart={handleStart} />
+      <Tomato status={status} percent={percent} handleStart={handleStart} isPlayerReady={isPlayerReady} />
     </main>
     <style jsx>{`
       main {

@@ -1,7 +1,7 @@
 import React from "react";
 import { READY } from "../constants";
 
-export default ({ status, handleStart, percent }) => (
+export default ({ status, handleStart, percent, isPlayerReady }) => (
   <div id="tomato-wrapper">
     <div
       id="tomato-fill"
@@ -10,7 +10,7 @@ export default ({ status, handleStart, percent }) => (
       }}
     />
     <img id="tomato" src="/static/tomato.svg" width="242" height="210" />
-    {status === READY && (
+    {(isPlayerReady && status === READY) && (
       <i id="start-btn" className="fas fa-play icon" onClick={handleStart} />
     )}
     <style jsx>{`
