@@ -32,7 +32,7 @@ export default ({ user, activeStation, handleOpenListPanel }) => (
       ) : (
         <a
           href={`https://account.kkbox.com/oauth2/authorize?redirect_uri=${encodeURIComponent(
-            'http://localhost:3000/',
+            'https://music-pomodoro.now.sh/',
           )}&client_id=${APP_ID}&response_type=code&state=2sCg`}
         >
           <i className="fas fa-user-plus icon" />
