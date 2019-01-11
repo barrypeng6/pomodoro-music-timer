@@ -35,7 +35,7 @@ export default ({ user, activeStation, handleOpenListPanel }) => (
             'http://localhost:3000/',
           )}&client_id=${APP_ID}&response_type=code&state=2sCg`}
         >
-          Login with KKBOX
+          <i className="fas fa-user-plus icon" />
         </a>
       )}
     </span>
@@ -121,7 +121,7 @@ export default ({ user, activeStation, handleOpenListPanel }) => (
             padding: 20px 20px;
             box-sizing: border-box;
           }
-          .icon-wrapper .icon {
+          .icon {
             font-size: 24px;
           }
           span.open {
@@ -133,6 +133,10 @@ export default ({ user, activeStation, handleOpenListPanel }) => (
           }
           span#popup-mood:after {
             left: 22px;
+          }
+          #user-thumb {
+            width: 24px;
+            height: 24px;
           }
         }
       `}

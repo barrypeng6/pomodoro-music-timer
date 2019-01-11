@@ -22,6 +22,7 @@ const BREAK_TIME = 300;
 const FIRST_BEEP_TIME = 60;
 
 const fetchVideoId = async (songs) => {
+  console.log('songs', songs);
   let count = 0;
   let videoId;
   while (videoId == null) {
@@ -39,7 +40,7 @@ const fetchVideoId = async (songs) => {
     // eslint-disable-next-line prefer-destructuring
     if (data.items.length > 0) videoId = data.items[0].id.videoId;
 
-    console.log('==>', data, searchStr);
+    console.log('==>', searchStr, data);
     count = count + 1;
   }
   return videoId;
@@ -100,7 +101,7 @@ export default class extends React.Component {
       curTime: WORK_TIME,
       isOpen: false,
       isLoading: false,
-      isPlayerReady: true,
+      isPlayerReady: false,
     };
   }
 
@@ -130,20 +131,25 @@ export default class extends React.Component {
         },
       });
 
-      this.setState({ activeStation: moodStation, videoIds: [videoId] });
+      this.setState({
+        activeStation: moodStation,
+        videoIds: [videoId],
+        count: 0,
+      });
     };
 
     const { error, privateToken } = this.props;
-    const userToken = privateToken || window.localStorage.getItem('privateToken');
-    // Get user data
+    const userToken =
+      privateToken || window.localStorage.getItem('privateToken');
+
     if (userToken) {
+      // Get user data
       const userRes = await fetch('https://api.kkbox.com/v1.1/me', {
         method: 'get',
         headers: {
           Authorization: `Bearer ${userToken}`,
         },
       });
-      console.log(userRes);
       if (userRes.status === 200) {
         const { id, name, images } = await userRes.json();
         const user = {
@@ -153,6 +159,22 @@ export default class extends React.Component {
         };
         this.setState({ user });
       }
+
+      // Get playlists 自訂列表
+      const playlistsRes = await fetch(
+        'https://api.kkbox.com/v1.1/me/playlists',
+        {
+          method: 'get',
+          headers: {
+            Authorization: `Bearer ${userToken}`,
+          },
+        },
+      );
+      if (playlistsRes.status === 200) {
+        const { data } = await playlistsRes.json();
+        console.log('playlists ', data);
+      }
+
       window.localStorage.setItem('privateToken', userToken);
     }
 
@@ -165,15 +187,21 @@ export default class extends React.Component {
   }
 
   onPlayerReady = () => {
-    console.log('ready');
     this.setState({ isPlayerReady: true });
   };
 
-  onPlayerStateChange = (event) => {
+  onPlayerStateChange = async (event) => {
     if (event.data === 0) {
-      const { count, videoIds } = this.state;
-      this.player.loadVideoById(videoIds[count + 1], 0, 'small');
-      this.setState({ count: count + 1 });
+      console.log('Player STOP.');
+      const { curTime, count, videoIds, activeStation } = this.state;
+      const videoId = await fetchVideoId(activeStation.songs.slice(count + 1));
+      console.log('Next song: ', videoId);
+      this.player.loadVideoById(videoId, 0, 'small');
+      this.setState({
+        videoIds: [...videoIds, videoId],
+        curTime: curTime - 1,
+        count: count + 1,
+      });
     }
   };
 
@@ -186,33 +214,26 @@ export default class extends React.Component {
   handleStart = () => {
     if (this.player) {
       this.player.playVideo();
+      console.log('Player Start.');
       this.timer = setInterval(this.handleCountDownWorkTime, 1000);
+      console.log('Working Timer Start.');
       this.setState({ status: WORKING });
     }
   };
 
   handleCountDownWorkTime = async () => {
-    const { activeStation, curTime, count, videoIds } = this.state;
+    const { curTime } = this.state;
     if (curTime > 0) {
-      if (
-        Math.floor(this.player.getDuration() - this.player.getCurrentTime()) ===
-        30
-      ) {
-        const videoId = await fetchVideoId(
-          activeStation.songs.slice(count + 1),
-        );
-        this.setState({
-          videoIds: [...videoIds, videoId],
-          curTime: curTime - 1,
-        });
-      } else {
-        this.setState({ curTime: curTime - 1 });
-      }
+      this.setState({ curTime: curTime - 1 });
 
-      if (curTime === FIRST_BEEP_TIME) beep(3);
-      if (curTime === 0) beep(5);
+      if (curTime === FIRST_BEEP_TIME) {
+        console.log('Last 1 min.', curTime);
+        beep(3);
+      }
     } else {
+      console.log('Take a break.');
       this.player.stopVideo();
+      beep(5);
       clearInterval(this.timer);
       this.setState({ status: BREAK, curTime: BREAK_TIME });
       this.timer = setInterval(this.handleCountDownBreakTime, 1000);
@@ -220,17 +241,17 @@ export default class extends React.Component {
   };
 
   handleCountDownBreakTime = () => {
-    const { curTime, count, videoIds } = this.state;
+    const { curTime } = this.state;
     if (curTime > 0) {
       this.setState({ curTime: curTime - 1 });
     } else {
+      console.log('Break is Over.');
       clearInterval(this.timer);
-      this.player.loadVideoById(videoIds[count + 1], 0, 'small');
-      this.player.stopVideo();
       if (MODE === MANUAL_START_AFTER_BREAK) {
         this.setState({ status: READY, curTime: WORK_TIME });
       } else {
         this.player.playVideo();
+        console.log('Working Timer Start.');
         this.timer = setInterval(this.handleCountDownWorkTime, 1000);
         this.setState({ status: WORKING, curTime: WORK_TIME });
       }
@@ -239,21 +260,65 @@ export default class extends React.Component {
 
   changeActiveStation = async (id) => {
     const { access_token } = this.props;
-    clearInterval(this.timer);
-    this.setState({ isLoading: true, status: READY });
+    const { status } = this.state;
+    this.setState({ isLoading: true });
 
     const moodStation = await fetchSongsByMoodStation(access_token, id);
     localStorage.setItem('moodStationId', id);
 
     const videoId = await fetchVideoId(moodStation.songs);
     this.player.loadVideoById(videoId, 0, 'small');
-    this.player.stopVideo();
+    if (status !== WORKING) {
+      this.player.stopVideo();
+    }
     this.setState({
       isOpen: false,
       isLoading: false,
       activeStation: moodStation,
+      count: 0,
       videoIds: [videoId],
     });
+  };
+
+  changeToFavorite = async () => {
+    const { privateToken } = this.props;
+    const { status } = this.state;
+    this.setState({ isLoading: true });
+    const userToken =
+      privateToken || window.localStorage.getItem('privateToken');
+    // Get favorite 收藏歌曲
+    const favoriteRes = await fetch('https://api.kkbox.com/v1.1/me/favorite', {
+      method: 'get',
+      headers: {
+        Authorization: `Bearer ${userToken}`,
+      },
+    });
+    if (favoriteRes.status === 200) {
+      const { data } = await favoriteRes.json();
+      const activeStation = {
+        mood: 'Favorite',
+        songs: data.map(ele => ({
+          name: ele.name,
+          artist: ele.album.artist.name,
+          album: ele.album.name,
+        })),
+        image: {},
+      };
+      console.log('favorite ', activeStation);
+
+      const videoId = await fetchVideoId(activeStation.songs);
+      this.player.loadVideoById(videoId, 0, 'small');
+      if (status !== WORKING) {
+        this.player.stopVideo();
+      }
+      this.setState({
+        isOpen: false,
+        isLoading: false,
+        count: 0,
+        videoIds: [videoId],
+        activeStation,
+      });
+    }
   };
 
   computePercent = (curTime) => {
@@ -293,6 +358,8 @@ export default class extends React.Component {
           }}
         />
         <ListPanel
+          user={user}
+          changeToFavorite={this.changeToFavorite}
           moodStations={moodStations}
           isOpen={isOpen}
           isLoading={isLoading}
