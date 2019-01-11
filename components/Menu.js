@@ -1,6 +1,12 @@
 import React from 'react';
+import getConfig from 'next/config';
+
 import Emoji from './Emoji';
 import getMappingEmoji from '../utils/getMappingEmoji';
+
+const {
+  publicRuntimeConfig: { APP_ID },
+} = getConfig();
 
 export default ({ activeStation, handleOpenListPanel }) => (
   <div id="menu">
@@ -15,6 +21,7 @@ export default ({ activeStation, handleOpenListPanel }) => (
     <span className="icon-wrapper">
       <i className="fas fa-cog icon" />
     </span>
+    <a href={`https://account.kkbox.com/oauth2/authorize?redirect_uri=${'http://localhost:3000/'}&client_id=${APP_ID}&response_type=code&state=test`}>Login</a>
     <style jsx>
       {`
         #menu {

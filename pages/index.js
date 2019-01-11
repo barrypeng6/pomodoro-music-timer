@@ -46,14 +46,38 @@ const fetchVideoId = async (songs) => {
 };
 
 export default class extends React.Component {
-  static async getInitialProps({ req }) {
+  static async getInitialProps({ req, query }) {
     if (req) {
-      // Create an auth object with client id and secret
-      const auth = new Auth(APP_ID, APP_SECRET);
+      const { code = null } = query;
+      let access_token, error;
+      if (code) {
+        const codeRes = await fetch('https://account.kkbox.com/oauth2/token', {
+          method: 'post',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: `grant_type=authorization_code&code=${code}&client_id=${APP_ID}&client_secret=${APP_SECRET}`,
+        });
+        // console.log('===>', codeRes);
+        const data = await codeRes.json();
+        console.log(data);
+        if (data.error) {
+          error = data.error;
+          const auth = new Auth(APP_ID, APP_SECRET);
+          const authResponse = await auth.clientCredentialsFlow.fetchAccessToken();
+          access_token = authResponse.data.access_token;
+        } else {
+          access_token = data.access_token;
+        }
+      } else {
+        console.log('>>>');
+        // Create an auth object with client id and secret
+        const auth = new Auth(APP_ID, APP_SECRET);
 
-      // Fetch your access token
-      const authResponse = await auth.clientCredentialsFlow.fetchAccessToken();
-      const { access_token } = authResponse.data;
+        // Fetch your access token
+        const authResponse = await auth.clientCredentialsFlow.fetchAccessToken();
+        access_token = authResponse.data.access_token;
+      }
 
       const { data: moodStations } = await fetchMoodStations(access_token);
 
@@ -61,6 +85,7 @@ export default class extends React.Component {
         // videoIds: [videoId],
         // searchStrings,
         // moodStation,
+        error,
         moodStations,
         access_token,
       };
@@ -110,6 +135,8 @@ export default class extends React.Component {
 
       this.setState({ activeStation: moodStation, videoIds: [videoId] });
     };
+    console.log(this.props.error);
+    if (this.props.error) alert(`Error: ${this.props.error}`);
   }
 
   componentWillUnmount() {
