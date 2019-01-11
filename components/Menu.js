@@ -7,7 +7,7 @@ const {
   publicRuntimeConfig: { APP_ID },
 } = getConfig();
 
-export default ({ activeStation, handleOpenListPanel }) => (
+export default ({ user, activeStation, handleOpenListPanel }) => (
   <div id="menu">
     {activeStation && (
       <span id="popup-mood">
@@ -21,11 +21,23 @@ export default ({ activeStation, handleOpenListPanel }) => (
       <i className="fas fa-cog icon" />
     </span>
     <span>
-      <a
-        href={`https://account.kkbox.com/oauth2/authorize?redirect_uri=${encodeURIComponent('https://music-pomodoro.now.sh')}&client_id=${APP_ID}&response_type=code&state=test`}
-      >
-        Login with KKBOX
-      </a>
+      {user ? (
+        <span>
+          <span
+            id="user-thumb"
+            style={{ backgroundImage: `url(${user.thumb})` }}
+          />
+          <span id="user-name">{user.name}</span>
+        </span>
+      ) : (
+        <a
+          href={`https://account.kkbox.com/oauth2/authorize?redirect_uri=${encodeURIComponent(
+            'http://localhost:3000/',
+          )}&client_id=${APP_ID}&response_type=code&state=2sCg`}
+        >
+          Login with KKBOX
+        </a>
+      )}
     </span>
     <style jsx>
       {`
@@ -82,6 +94,22 @@ export default ({ activeStation, handleOpenListPanel }) => (
           left: 22px;
           transform: rotate(45deg);
           box-shadow: 1px 1px 1px 0px #795548;
+        }
+
+        #user-thumb {
+          width: 36px;
+          position: relative;
+          height: 36px;
+          background-color: #fff;
+          display: inline-block;
+          border-radius: 18px;
+          top: 5px;
+          background-size: cover;
+        }
+
+        #user-name {
+          font-size: 12px;
+          margin-left: 5px;
         }
 
         @media screen and (max-width: 375px) {

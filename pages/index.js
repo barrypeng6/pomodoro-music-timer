@@ -45,38 +45,47 @@ const fetchVideoId = async (songs) => {
   return videoId;
 };
 
+const getAccessToken = async (code) => {
+  if (code) {
+    const codeRes = await fetch('https://account.kkbox.com/oauth2/token', {
+      method: 'post',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: `grant_type=authorization_code&code=${code}&client_id=${APP_ID}&client_secret=${APP_SECRET}`,
+    });
+
+    const { access_token: privateToken, error } = await codeRes.json();
+    if (error) {
+      const auth = new Auth(APP_ID, APP_SECRET);
+      const authResponse = await auth.clientCredentialsFlow.fetchAccessToken();
+      const { access_token: publicToken } = authResponse.data;
+      return { publicToken, error };
+    }
+    return { privateToken };
+  }
+  const auth = new Auth(APP_ID, APP_SECRET);
+  const authResponse = await auth.clientCredentialsFlow.fetchAccessToken();
+  const { access_token: publicToken } = authResponse.data;
+  return { publicToken };
+};
+
 export default class extends React.Component {
   static async getInitialProps({ req, query }) {
-    console.log('query', query);
     if (req) {
-      let access_token;
       const { code = null } = query;
-      if (code) {
-        const codeRes = await fetch(
-          `https://account.kkbox.com/oauth2/token?grant_type=authorization_code&code=${code}&client_id=${APP_ID}&client_secret=${APP_SECRET}`,
-        );
+      const { publicToken, privateToken, error } = await getAccessToken(code);
 
-        const data = await codeRes.json();
-        access_token = data.access_token; // eslint-disable-line
-        console.log('access_token', access_token);
-      } else {
-        // Create an auth object with client id and secret
-        const auth = new Auth(APP_ID, APP_SECRET);
-
-        // Fetch your access token
-        const authResponse = await auth.clientCredentialsFlow.fetchAccessToken();
-        access_token = authResponse.data.access_token; // eslint-disable-line
+      const access_token = privateToken || publicToken;
+      if (access_token) {
+        const { data: moodStations } = await fetchMoodStations(access_token);
+        return {
+          moodStations,
+          access_token,
+          privateToken,
+        };
       }
-
-      const { data: moodStations } = await fetchMoodStations(access_token);
-
-      return {
-        // videoIds: [videoId],
-        // searchStrings,
-        // moodStation,
-        moodStations,
-        access_token,
-      };
+      return { error };
     }
     return {};
   }
@@ -123,6 +132,31 @@ export default class extends React.Component {
 
       this.setState({ activeStation: moodStation, videoIds: [videoId] });
     };
+
+    const { error, privateToken } = this.props;
+    const userToken = privateToken || window.localStorage.getItem('privateToken');
+    // Get user data
+    if (userToken) {
+      const userRes = await fetch('https://api.kkbox.com/v1.1/me', {
+        method: 'get',
+        headers: {
+          Authorization: `Bearer ${userToken}`,
+        },
+      });
+      console.log(userRes);
+      if (userRes.status === 200) {
+        const { id, name, images } = await userRes.json();
+        const user = {
+          id,
+          name,
+          thumb: images[0].url,
+        };
+        this.setState({ user });
+      }
+      window.localStorage.setItem('privateToken', userToken);
+    }
+
+    if (error) alert(`Error: ${error}`); // eslint-disable-line
   }
 
   componentWillUnmount() {
@@ -233,6 +267,7 @@ export default class extends React.Component {
   render() {
     const { moodStations } = this.props;
     const {
+      user,
       activeStation,
       curTime,
       status,
@@ -251,6 +286,7 @@ export default class extends React.Component {
           covertSecToMinSec={this.covertSecToMinSec}
         />
         <Menu
+          user={user}
           activeStation={activeStation}
           handleOpenListPanel={() => {
             this.setState({ isOpen: true });
