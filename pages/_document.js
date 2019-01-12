@@ -16,15 +16,6 @@ export default class MyDocument extends Document {
             async
             src="https://www.googletagmanager.com/gtag/js?id=UA-132387945-1"
           />
-          <script>
-            {`
-              window.dataLayer = window.dataLayer || [];
-              function gtag(){dataLayer.push(arguments);}
-              gtag('js', new Date());
-              gtag('config', 'UA-132387945-1');
-            `}
-          </script>
-
           <meta
             name="viewport"
             content="width=device-width, initial-scale=1, user-scalable=no"

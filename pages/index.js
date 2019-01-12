@@ -106,6 +106,15 @@ export default class extends React.Component {
   }
 
   async componentDidMount() {
+    /* eslint-disable */
+    window.dataLayer = window.dataLayer || [];
+    function gtag() {
+      dataLayer.push(arguments);
+    }
+    gtag('js', new Date());
+    gtag('config', 'UA-132387945-1');
+    /* eslint-enable */
+
     // Setting up Youtube iframe
     window.onYouTubePlayerAPIReady = async () => {
       const { access_token } = this.props;
@@ -297,7 +306,7 @@ export default class extends React.Component {
       const { data } = await favoriteRes.json();
       const activeStation = {
         mood: 'Favorite',
-        songs: data.map(ele => ({
+        songs: data.map((ele) => ({
           name: ele.name,
           artist: ele.album.artist.name,
           album: ele.album.name,
