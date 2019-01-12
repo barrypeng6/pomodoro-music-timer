@@ -66,7 +66,7 @@ export default ({
         .library {
           display: flex;
           flex-wrap: wrap;
-          width: 240px;
+          width: 300px;
           margin: 0 auto;
           margin-top: 120px;
           justify-content: flex-start;
@@ -102,6 +102,7 @@ export default ({
           }
           .library {
             margin-top: 70px;
+            width: 240px;
           }
         }
       `}
