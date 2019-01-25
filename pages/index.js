@@ -306,7 +306,7 @@ export default class extends React.Component {
       const { data } = await favoriteRes.json();
       const activeStation = {
         mood: 'Favorite',
-        songs: data.map((ele) => ({
+        songs: data.map(ele => ({
           name: ele.name,
           artist: ele.album.artist.name,
           album: ele.album.name,
