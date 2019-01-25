@@ -133,6 +133,7 @@ export default class extends React.Component {
         playerVars: {
           controls: 0,
           modestbranding: 1,
+          playsinline: 1,
         },
         events: {
           onReady: this.onPlayerReady,
