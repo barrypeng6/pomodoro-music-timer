@@ -5,7 +5,7 @@ import getConfig from 'next/config';
 
 import { Main, Menu, ListPanel } from '../components';
 import { READY, WORKING, BREAK } from '../constants';
-import { fetchMoodStations, fetchSongsByMoodStation, beep } from '../utils';
+import { fetchMoodStations, fetchSongsByMoodStation } from '../utils';
 
 const {
   publicRuntimeConfig: { APP_ID, APP_SECRET, YT_API_KEY },
@@ -238,12 +238,12 @@ export default class extends React.Component {
 
       if (curTime === FIRST_BEEP_TIME) {
         console.log('Last 1 min.', curTime);
-        beep(3);
+        this.ringing();
       }
     } else {
       console.log('Take a break.');
       this.player.stopVideo();
-      beep(5);
+      this.ringing();
       clearInterval(this.timer);
       this.setState({ status: BREAK, curTime: BREAK_TIME });
       this.timer = setInterval(this.handleCountDownBreakTime, 1000);
@@ -331,6 +331,11 @@ export default class extends React.Component {
     }
   };
 
+  ringing = () => {
+    const audioElement = document.querySelector('audio');
+    audioElement.play();
+  }
+
   computePercent = (curTime) => {
     const { status } = this.state;
     if (status === WORKING) {
@@ -352,6 +357,8 @@ export default class extends React.Component {
     } = this.state;
     return (
       <div className="container">
+        {/* eslint-disable-next-line */}
+        <audio src="../static/tone.mp3" type="audio/mpeg" />
         <Main
           isPlayerReady={isPlayerReady}
           status={status}
