@@ -11,6 +11,7 @@ export default class MyDocument extends Document {
     return (
       <html lang="en-US">
         <Head>
+          <link rel="shortcut icon" type="image/png" href="../static/favicon.ico" />
           <title>Pomodoro Music Timer</title>
           <script
             async
