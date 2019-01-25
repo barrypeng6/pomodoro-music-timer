@@ -14,7 +14,7 @@ const {
 // eslint-disable-next-line
 const AUTO_START_AFTER_BREAK = 'AUTO_START_AFTER_BREAK';
 const MANUAL_START_AFTER_BREAK = 'MANUAL_START_AFTER_BREAK';
-const MODE = MANUAL_START_AFTER_BREAK;
+const MODE = AUTO_START_AFTER_BREAK;
 
 const WORK_TIME = 1500;
 const BREAK_TIME = 300;
@@ -198,6 +198,7 @@ export default class extends React.Component {
 
   onPlayerReady = () => {
     this.setState({ isPlayerReady: true });
+    console.log('vol: ', this.player.getVolume());
   };
 
   onPlayerStateChange = async (event) => {
@@ -224,9 +225,9 @@ export default class extends React.Component {
   handleStart = () => {
     if (this.player) {
       this.player.playVideo();
-      console.log('Player Start.');
+      this.player.setVolume(100);
+      console.log('Player Start. Working Timer Start.');
       this.timer = setInterval(this.handleCountDownWorkTime, 1000);
-      console.log('Working Timer Start.');
       this.setState({ status: WORKING });
     }
   };
@@ -239,10 +240,12 @@ export default class extends React.Component {
       if (curTime === FIRST_BEEP_TIME) {
         console.log('Last 1 min.', curTime);
         this.ringing();
+      } else if (curTime < 5) {
+        this.player.setVolume(curTime * 10);
       }
     } else {
       console.log('Take a break.');
-      this.player.stopVideo();
+      this.player.pauseVideo();
       this.ringing();
       clearInterval(this.timer);
       this.setState({ status: BREAK, curTime: BREAK_TIME });
@@ -257,10 +260,12 @@ export default class extends React.Component {
     } else {
       console.log('Break is Over.');
       clearInterval(this.timer);
+      this.ringing();
       if (MODE === MANUAL_START_AFTER_BREAK) {
         this.setState({ status: READY, curTime: WORK_TIME });
       } else {
         this.player.playVideo();
+        this.player.setVolume(100);
         console.log('Working Timer Start.');
         this.timer = setInterval(this.handleCountDownWorkTime, 1000);
         this.setState({ status: WORKING, curTime: WORK_TIME });
