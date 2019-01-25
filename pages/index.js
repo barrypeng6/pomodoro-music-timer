@@ -395,11 +395,15 @@ export default class extends React.Component {
               right: 0;
               margin: 20px;
               box-shadow: 1px 1px 3px 1px #333;
+              opacity: 0.2;
               transition: all 0.5s cubic-bezier(0.39, 0.58, 0.57, 1);
             }
-            #player:hover {
-              width: 426px;
-              height: 240px;
+            @media screen and (min-width: 376px) {
+              #player:hover {
+                width: 335px;
+                height: 189px;
+                opacity: 1;
+              }
             }
           `}
         </style>
