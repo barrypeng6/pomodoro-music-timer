@@ -1,16 +1,6 @@
 import React from 'react';
-import Emoji from './Emoji';
-import getMappingEmoji from '../utils/getMappingEmoji';
 
-export default ({
-  changeActiveStation,
-  changeToFavorite,
-  moodStations,
-  user,
-  isOpen,
-  isLoading,
-  handleCloseListPanel,
-}) => (
+export default ({ children, isOpen, handleClosePanel }) => (
   <div
     id="settings-wrapper"
     style={{
@@ -20,34 +10,9 @@ export default ({
     }}
   >
     {isOpen && (
-      <i className="fas fa-times icon" onClick={handleCloseListPanel} />
+      <i className="fas fa-times icon" onClick={handleClosePanel} />
     )}
-
-    <div className="library">
-      {isLoading
-        ? 'loadding...'
-        : moodStations.map(station => (
-          <div
-            key={station.id}
-            className="emoji-wrapper"
-            onClick={() => {
-              changeActiveStation(station.id);
-            }}
-          >
-            <Emoji symbol={getMappingEmoji(station.name)} />
-            <div style={{ fontSize: 12 }}>{station.name}</div>
-          </div>
-        ))}
-      {(user && !isLoading) && (
-        <div
-          className="emoji-wrapper"
-          onClick={changeToFavorite}
-        >
-          <Emoji symbol="⭐" />
-          <div style={{ fontSize: 12 }}>Favorite</div>
-        </div>
-      )}
-    </div>
+    {children}
     <style jsx>
       {`
         #settings-wrapper {

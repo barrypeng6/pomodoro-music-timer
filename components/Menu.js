@@ -7,17 +7,22 @@ const {
   publicRuntimeConfig: { APP_ID },
 } = getConfig();
 
-export default ({ user, activeStation, handleOpenListPanel }) => (
+export default ({
+  user,
+  activeStation,
+  handleOpenStations,
+  handleOpenSettings,
+}) => (
   <div id="menu">
     {activeStation && (
       <span id="popup-mood">
         <Emoji symbol={getMappingEmoji(activeStation.mood)} />
       </span>
     )}
-    <span className="icon-wrapper" onClick={handleOpenListPanel}>
+    <span className="icon-wrapper" onClick={handleOpenStations}>
       <i className="fas fa-music icon" />
     </span>
-    <span className="icon-wrapper">
+    <span className="icon-wrapper" onClick={handleOpenSettings}>
       <i className="fas fa-cog icon" />
     </span>
     <span>

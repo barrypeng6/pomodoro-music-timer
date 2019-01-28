@@ -3,7 +3,7 @@ import fetch from 'isomorphic-unfetch';
 import { Auth } from '@kkbox/kkbox-js-sdk';
 import getConfig from 'next/config';
 
-import { Main, Menu, ListPanel } from '../components';
+import { Main, Menu, Panel, Stations, Settings } from '../components';
 import { READY, WORKING, BREAK } from '../constants';
 import { fetchMoodStations, fetchSongsByMoodStation } from '../utils';
 
@@ -99,7 +99,8 @@ export default class extends React.Component {
       status: READY,
       count: 0,
       curTime: WORK_TIME,
-      isOpen: false,
+      isStationsOpen: false,
+      isSettingsOpen: false,
       isLoading: false,
       isPlayerReady: false,
     };
@@ -287,7 +288,7 @@ export default class extends React.Component {
       this.player.stopVideo();
     }
     this.setState({
-      isOpen: false,
+      isStationsOpen: false,
       isLoading: false,
       activeStation: moodStation,
       count: 0,
@@ -327,7 +328,7 @@ export default class extends React.Component {
         this.player.stopVideo();
       }
       this.setState({
-        isOpen: false,
+        isStationsOpen: false,
         isLoading: false,
         count: 0,
         videoIds: [videoId],
@@ -356,7 +357,8 @@ export default class extends React.Component {
       activeStation,
       curTime,
       status,
-      isOpen,
+      isStationsOpen,
+      isSettingsOpen,
       isLoading,
       isPlayerReady,
     } = this.state;
@@ -375,21 +377,35 @@ export default class extends React.Component {
         <Menu
           user={user}
           activeStation={activeStation}
-          handleOpenListPanel={() => {
-            this.setState({ isOpen: true });
+          handleOpenStations={() => {
+            this.setState({ isStationsOpen: true });
+          }}
+          handleOpenSettings={() => {
+            this.setState({ isSettingsOpen: true });
           }}
         />
-        <ListPanel
-          user={user}
-          changeToFavorite={this.changeToFavorite}
-          moodStations={moodStations}
-          isOpen={isOpen}
-          isLoading={isLoading}
-          handleCloseListPanel={() => {
-            this.setState({ isOpen: false });
+        <Panel
+          isOpen={isStationsOpen}
+          handleClosePanel={() => {
+            this.setState({ isStationsOpen: false });
           }}
-          changeActiveStation={this.changeActiveStation}
-        />
+        >
+          <Stations
+            user={user}
+            changeToFavorite={this.changeToFavorite}
+            moodStations={moodStations}
+            isLoading={isLoading}
+            changeActiveStation={this.changeActiveStation}
+          />
+        </Panel>
+        <Panel
+          isOpen={isSettingsOpen}
+          handleClosePanel={() => {
+            this.setState({ isSettingsOpen: false });
+          }}
+        >
+          <Settings />
+        </Panel>
         <div id="player" />
         <style jsx>
           {`
