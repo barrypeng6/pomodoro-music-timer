@@ -1,4 +1,5 @@
 import React from 'react';
+import { AUTO_START_AFTER_BREAK, MANUAL_START_AFTER_BREAK } from '../constants';
 
 export default class extends React.Component {
   constructor(props) {
@@ -6,34 +7,55 @@ export default class extends React.Component {
     this.state = {
       workPeriod: props.workPeriod,
       breakPeriod: props.breakPeriod,
+      mode: props.mode || MANUAL_START_AFTER_BREAK,
     };
   }
 
   onChangeWorkPeriod = (e) => {
     const workPeriod = e.target.value;
     this.setState({ workPeriod });
-  }
+  };
 
   onChangeBreakPeriod = (e) => {
     const breakPeriod = e.target.value;
     this.setState({ breakPeriod });
-  }
+  };
+
+  onChangeMode = (e) => {
+    const { value } = e.target;
+    console.log(value);
+    if (value === MANUAL_START_AFTER_BREAK) {
+      this.setState({ mode: AUTO_START_AFTER_BREAK });
+    } else {
+      this.setState({ mode: MANUAL_START_AFTER_BREAK });
+    }
+  };
 
   saveSettings = () => {
     const { handleSaveSettings } = this.props;
-    const { workPeriod, breakPeriod } = this.state;
-    handleSaveSettings({ workPeriod, breakPeriod });
-  }
+    const { workPeriod, breakPeriod, mode } = this.state;
+    handleSaveSettings({ workPeriod, breakPeriod, mode });
+  };
 
   render() {
-    const {
-      workPeriod,
-      breakPeriod,
-    } = this.state;
+    const { workPeriod, breakPeriod, mode } = this.state;
     return (
       <div>
         <div className="title">Settings</div>
         <div className="setting-wrapper">
+          <section>
+            <div className="section-title">Mode:</div>
+            <label htmlFor="mode">
+              <input
+                style={{ width: 15 }}
+                type="checkbox"
+                value={mode}
+                onChange={this.onChangeMode}
+              />
+              <span>Auto start after break.</span>
+            </label>
+          </section>
+          <br />
           <section className="working-setting">
             <div className="section-title">Working Time</div>
             <label htmlFor="work-period">
@@ -41,12 +63,10 @@ export default class extends React.Component {
               <input
                 id="work-period"
                 type="number"
-                max="300"
-                min="25"
                 value={workPeriod}
                 onChange={this.onChangeWorkPeriod}
               />
-              <span>min(s)</span>
+              <span>sec.</span>
             </label>
           </section>
           <br />
@@ -57,18 +77,18 @@ export default class extends React.Component {
               <input
                 id="break-period"
                 type="number"
-                max="300"
-                min="25"
                 value={breakPeriod}
                 onChange={this.onChangeBreakPeriod}
               />
-              <span>min(s)</span>
+              <span>sec.</span>
             </label>
           </section>
           <button
             type="button"
             onClick={() => {
-              const isConfirmed = window.confirm('Are you sure? Timer will stop if you change settings.');
+              const isConfirmed = window.confirm(
+                'Are you sure? Timer will stop if you change settings.',
+              );
               if (isConfirmed) {
                 this.saveSettings();
               }
@@ -79,10 +99,14 @@ export default class extends React.Component {
         </div>
         <style jsx>
           {`
+            * {
+              font-family: initial;
+            }
             .title {
               margin: 40px;
               color: #fff;
-              font-size: 20px;
+              font-size: 28px;
+              line-height: 40px;
             }
             .setting-wrapper {
               padding: 20px 40px;

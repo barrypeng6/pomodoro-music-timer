@@ -1,7 +1,7 @@
 import React from 'react';
 import fetch from 'isomorphic-unfetch';
 
-import { Main, Menu, Panel, Stations, Settings } from './index';
+import { Main, Menu, Panel, Stations, Settings, Splash } from './index';
 import { READY, WORKING, BREAK, MANUAL_START_AFTER_BREAK } from '../constants';
 import { fetchSongsByMoodStation, fetchVideoId } from '../utils';
 
@@ -12,7 +12,7 @@ export default class extends React.Component {
     const { workPeriod } = settings;
 
     this.state = {
-      videoIds: props.videoIds,
+      videoIds: [],
       activeStation: props.moodStation,
       status: READY,
       count: 0,
@@ -21,6 +21,7 @@ export default class extends React.Component {
       isSettingsOpen: false,
       isLoading: false,
       isPlayerReady: false,
+      hideLoadingCover: false,
     };
   }
 
@@ -36,6 +37,7 @@ export default class extends React.Component {
 
     // Setting up Youtube iframe
     window.onYouTubePlayerAPIReady = async () => {
+      console.log('>>> ready.');
       const { access_token } = this.props;
       const id = localStorage.getItem('moodStationId');
 
@@ -117,7 +119,6 @@ export default class extends React.Component {
 
   onPlayerReady = () => {
     this.setState({ isPlayerReady: true });
-    console.log('vol: ', this.player.getVolume());
   };
 
   onPlayerStateChange = async (event) => {
@@ -153,10 +154,7 @@ export default class extends React.Component {
 
   handleCountDownWorkTime = async () => {
     const {
-      settings: {
-        breakPeriod,
-        firstBeepTime,
-      },
+      settings: { breakPeriod, firstBeepTime },
     } = this.props;
     const { curTime } = this.state;
 
@@ -181,10 +179,7 @@ export default class extends React.Component {
 
   handleCountDownBreakTime = () => {
     const {
-      settings: {
-        workPeriod,
-        mode,
-      },
+      settings: { workPeriod, mode },
     } = this.props;
     const { curTime } = this.state;
 
@@ -252,7 +247,6 @@ export default class extends React.Component {
         })),
         image: {},
       };
-      console.log('favorite ', activeStation);
 
       const videoId = await fetchVideoId(activeStation.songs);
       this.player.loadVideoById(videoId, 0, 'small');
@@ -270,16 +264,14 @@ export default class extends React.Component {
   };
 
   ringing = () => {
+    /* iOS does not allowe auotplay sound, unless the user touch start */
     const audioElement = document.querySelector('audio');
     audioElement.play();
-  }
+  };
 
   computePercent = (curTime) => {
     const {
-      settings: {
-        workPeriod,
-        breakPeriod,
-      },
+      settings: { workPeriod, breakPeriod },
     } = this.props;
     const { status } = this.state;
     if (status === WORKING) {
@@ -304,7 +296,7 @@ export default class extends React.Component {
     this.player.stopVideo();
     clearInterval(this.timer);
     handleSaveSettings(settings);
-  }
+  };
 
   render() {
     const { moodStations, settings } = this.props;
@@ -317,12 +309,27 @@ export default class extends React.Component {
       isSettingsOpen,
       isLoading,
       isPlayerReady,
+      hideLoadingCover,
     } = this.state;
 
     return (
       <div>
+        {!hideLoadingCover && (
+          <div
+            className="loading-cover"
+            style={{ opacity: isPlayerReady ? 0 : 1 }}
+            onTransitionEnd={() => {
+              this.setState({ hideLoadingCover: true });
+            }}
+          >
+            <Splash />
+          </div>
+        )}
         {/* eslint-disable-next-line */}
-        <audio src="../static/tone.mp3" type="audio/mpeg" />
+        <audio>
+          <source kind="captions" src="../static/tone.mp3" type="audio/mpeg" />
+          Your browser does not support the audio element.
+        </audio>
         <Main
           isPlayerReady={isPlayerReady}
           status={status}
@@ -367,9 +374,21 @@ export default class extends React.Component {
           />
         </Panel>
         <div id="player" />
+        <div id="cover" />
         <style jsx>
           {`
-            #player {
+            .loading-cover {
+              position: fixed;
+              background-color: #f95f62;
+              z-index: 999;
+              top: 0;
+              bottom: 0;
+              left: 0;
+              right: 0;
+              transition: all 1s ease-in;
+            }
+            #player,
+            #cover {
               position: fixed;
               bottom: 0;
               right: 0;
@@ -378,11 +397,18 @@ export default class extends React.Component {
               opacity: 0.2;
               transition: all 0.5s cubic-bezier(0.39, 0.58, 0.57, 1);
             }
+            #cover {
+              width: 100px;
+              height: 60px;
+            }
             @media screen and (min-width: 376px) {
               #player:hover {
                 width: 335px;
                 height: 189px;
                 opacity: 1;
+              }
+              #cover {
+                display: none;
               }
             }
           `}

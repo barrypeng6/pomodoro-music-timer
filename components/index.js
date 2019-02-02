@@ -7,6 +7,7 @@ import Emoji from './Emoji';
 import Stations from './Stations';
 import Settings from './Settings';
 import Loading from './Loading';
+import Splash from './Splash';
 
 export {
   App,
@@ -18,4 +19,5 @@ export {
   Stations,
   Settings,
   Loading,
+  Splash,
 };

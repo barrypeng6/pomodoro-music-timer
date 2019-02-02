@@ -1,8 +1,8 @@
 import React from 'react';
 
-import { App, Loading } from '../components';
+import { App, Splash } from '../components';
 import { fetchMoodStations, getAccessToken } from '../utils';
-import { AUTO_START_AFTER_BREAK } from '../constants';
+import { MANUAL_START_AFTER_BREAK } from '../constants';
 
 const WORK_TIME = 1500;
 const BREAK_TIME = 300;
@@ -32,10 +32,11 @@ export default class extends React.Component {
   constructor() {
     super();
     this.state = {
+      isSplashReady: false,
       settings: {
         workPeriod: 0,
         breakPeriod: 0,
-        mode: AUTO_START_AFTER_BREAK,
+        mode: MANUAL_START_AFTER_BREAK,
         firstBeepTime: FIRST_BEEP_TIME,
       },
     };
@@ -46,43 +47,46 @@ export default class extends React.Component {
     const workPeriod = window.localStorage.getItem('workPeriod') || WORK_TIME;
     const breakPeriod =
       window.localStorage.getItem('breakPeriod') || BREAK_TIME;
+    const mode = window.localStorage.getItem('mode') || MANUAL_START_AFTER_BREAK;
     this.setState({
       settings: {
         ...settings,
         workPeriod,
         breakPeriod,
+        mode,
       },
+      isSplashReady: true,
     });
   }
 
   handleSaveSettings = (settings) => {
     const { settings: oldSettings } = this.state;
-    const { workPeriod, breakPeriod } = settings;
+    const { workPeriod, breakPeriod, mode } = settings;
     this.setState({
       settings: {
         ...oldSettings,
         workPeriod,
         breakPeriod,
+        mode,
       },
     });
     window.localStorage.setItem('workPeriod', workPeriod);
     window.localStorage.setItem('breakPeriod', breakPeriod);
+    window.localStorage.setItem('mode', mode);
   };
 
   render() {
-    const {
-      settings: { workPeriod },
-    } = this.state;
+    const { isSplashReady } = this.state;
     return (
       <div className="container">
-        {workPeriod ? (
+        {isSplashReady ? (
           <App
             {...this.props}
             {...this.state}
             handleSaveSettings={this.handleSaveSettings}
           />
         ) : (
-          <Loading />
+          <Splash />
         )}
         <style jsx>
           {`

@@ -2,8 +2,6 @@ import React from 'react';
 
 export default () => (
   <div className="wrapper">
-    <h1>Welcome</h1>
-    <br />
     <div className="lds-ripple">
       <div />
       <div />
@@ -16,9 +14,6 @@ export default () => (
           justify-content: center;
           align-items: center;
           flex-direction: column;
-        }
-        h1 {
-          color: #fff;
         }
         .lds-ripple {
           display: inline-block;
