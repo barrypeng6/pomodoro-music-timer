@@ -145,7 +145,7 @@ export default class extends React.Component {
   handleStart = () => {
     if (this.player) {
       this.player.playVideo();
-      this.player.setVolume(100);
+      this.player.setVolume(0);
       console.log('Player Start. Working Timer Start.');
       this.timer = setInterval(this.handleCountDownWorkTime, 1000);
       this.setState({ status: WORKING });
@@ -154,7 +154,7 @@ export default class extends React.Component {
 
   handleCountDownWorkTime = async () => {
     const {
-      settings: { breakPeriod, firstBeepTime },
+      settings: { workPeriod, breakPeriod, firstBeepTime },
     } = this.props;
     const { curTime } = this.state;
 
@@ -163,14 +163,18 @@ export default class extends React.Component {
 
       if (curTime === firstBeepTime) {
         console.log('Last 1 min.', curTime);
-        this.ringing();
+        this.oneMinRing();
       } else if (curTime < 5) {
         this.player.setVolume(curTime * 10);
+      } else if (workPeriod - curTime < 5) {
+        this.player.setVolume((workPeriod - curTime + 1) * 10);
+      } else if (workPeriod - curTime === 5) {
+        this.player.setVolume(100);
       }
     } else {
       console.log('Take a break.');
       this.player.pauseVideo();
-      this.ringing();
+      this.breakRing();
       clearInterval(this.timer);
       this.setState({ status: BREAK, curTime: breakPeriod });
       this.timer = setInterval(this.handleCountDownBreakTime, 1000);
@@ -188,12 +192,12 @@ export default class extends React.Component {
     } else {
       console.log('Break is Over.');
       clearInterval(this.timer);
-      this.ringing();
+      this.workRing();
       if (mode === MANUAL_START_AFTER_BREAK) {
         this.setState({ status: READY, curTime: workPeriod });
       } else {
         this.player.playVideo();
-        this.player.setVolume(100);
+        this.player.setVolume(0);
         console.log('Working Timer Start.');
         this.timer = setInterval(this.handleCountDownWorkTime, 1000);
         this.setState({ status: WORKING, curTime: workPeriod });
@@ -263,10 +267,17 @@ export default class extends React.Component {
     }
   };
 
-  ringing = () => {
-    /* iOS does not allowe auotplay sound, unless the user touch start */
-    const audioElement = document.querySelector('audio');
-    audioElement.play();
+  /* iOS does not allowe auotplay sound, unless the user touch start */
+  oneMinRing = () => {
+    document.querySelector('#one-min').play();
+  };
+
+  breakRing = () => {
+    document.querySelector('#break').play();
+  };
+
+  workRing = () => {
+    document.querySelector('#work').play();
   };
 
   computePercent = (curTime) => {
@@ -325,11 +336,11 @@ export default class extends React.Component {
             <Splash />
           </div>
         )}
-        {/* eslint-disable-next-line */}
-        <audio>
-          <source kind="captions" src="../static/tone.mp3" type="audio/mpeg" />
-          Your browser does not support the audio element.
-        </audio>
+        {/* eslint-disable */}
+        <audio id="one-min" src="../static/one-minute.mp3" type="audio/mpeg" />
+        <audio id="break" src="../static/break.mp3" type="audio/mpeg" />
+        <audio id="work" src="../static/keep-working.mp3" type="audio/mpeg" />
+        {/* eslint-enable */}
         <Main
           isPlayerReady={isPlayerReady}
           status={status}

@@ -23,7 +23,6 @@ export default class extends React.Component {
 
   onChangeMode = (e) => {
     const { value } = e.target;
-    console.log(value);
     if (value === MANUAL_START_AFTER_BREAK) {
       this.setState({ mode: AUTO_START_AFTER_BREAK });
     } else {
@@ -49,7 +48,7 @@ export default class extends React.Component {
               <input
                 style={{ width: 15 }}
                 type="checkbox"
-                value={mode}
+                checked={mode === AUTO_START_AFTER_BREAK}
                 onChange={this.onChangeMode}
               />
               <span>Auto start after break.</span>
@@ -83,19 +82,22 @@ export default class extends React.Component {
               <span>sec.</span>
             </label>
           </section>
-          <button
-            type="button"
-            onClick={() => {
-              const isConfirmed = window.confirm(
-                'Are you sure? Timer will stop if you change settings.',
-              );
-              if (isConfirmed) {
-                this.saveSettings();
-              }
-            }}
-          >
-            Save
-          </button>
+          <br />
+          <section>
+            <button
+              type="button"
+              onClick={() => {
+                const isConfirmed = window.confirm(
+                  'Are you sure? Timer will stop if you change settings.',
+                );
+                if (isConfirmed) {
+                  this.saveSettings();
+                }
+              }}
+            >
+              Save
+            </button>
+          </section>
         </div>
         <style jsx>
           {`
