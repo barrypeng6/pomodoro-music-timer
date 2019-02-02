@@ -45,8 +45,8 @@ export default class MyDocument extends Document {
         </Head>
         <body>
           <Main />
-          <script async src="https://www.youtube.com/player_api" />
           <NextScript />
+          <script async src="https://www.youtube.com/player_api" />
         </body>
       </html>
     );
