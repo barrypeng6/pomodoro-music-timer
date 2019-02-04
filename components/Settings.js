@@ -23,6 +23,7 @@ export default class extends React.Component {
 
   onChangeMode = (e) => {
     const { value } = e.target;
+    console.log('>>>', value);
     if (value === MANUAL_START_AFTER_BREAK) {
       this.setState({ mode: AUTO_START_AFTER_BREAK });
     } else {
@@ -38,6 +39,7 @@ export default class extends React.Component {
 
   render() {
     const { workPeriod, breakPeriod, mode } = this.state;
+    console.log('==>', mode);
     return (
       <div>
         <div className="title">Settings</div>
@@ -48,6 +50,7 @@ export default class extends React.Component {
               <input
                 style={{ width: 15 }}
                 type="checkbox"
+                value={mode}
                 checked={mode === AUTO_START_AFTER_BREAK}
                 onChange={this.onChangeMode}
               />
