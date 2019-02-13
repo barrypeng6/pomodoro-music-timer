@@ -35,6 +35,12 @@ export default class extends React.Component {
     gtag('config', 'UA-132387945-1');
     /* eslint-enable */
 
+    const tag = document.createElement('script');
+
+    tag.src = 'https://www.youtube.com/iframe_api';
+    const firstScriptTag = document.getElementsByTagName('script')[0];
+    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
     // Setting up Youtube iframe
     window.onYouTubePlayerAPIReady = async () => {
       console.log('>>> ready.');

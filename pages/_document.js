@@ -12,7 +12,10 @@ export default class MyDocument extends Document {
       <html lang="en-US">
         <Head>
           <link rel="shortcut icon" type="image/png" href="../static/favicon.ico" />
+          <link rel="apple-touch-icon" type="image/png" href="../static/favicon.ico" />
           <title>Pomodoro Music Timer</title>
+          <meta name="apple-mobile-web-app-capable" content="yes" />
+          <meta name="mobile-web-app-capable" content="yes" />
           <script
             async
             src="https://www.googletagmanager.com/gtag/js?id=UA-132387945-1"
@@ -46,7 +49,7 @@ export default class MyDocument extends Document {
         <body>
           <Main />
           <NextScript />
-          <script async src="https://www.youtube.com/player_api" />
+          {/* <script async src="https://www.youtube.com/player_api" /> */}
         </body>
       </html>
     );
